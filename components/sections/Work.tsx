@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import type { CSSProperties } from 'react'
 
+import { OpenCue } from '@/components/OpenCue'
 import { Plate } from '@/components/Plate'
+import { DrumSkip } from '@/components/drum/DrumSkip'
 import { useDrum } from '@/components/drum/useDrum'
 import type { ProjectSummary } from '@/lib/types'
 
@@ -74,6 +76,10 @@ export function Work({ projects }: { projects: ProjectSummary[] }) {
                       ))}
                     </ul>
 
+                    <p className="mt-6">
+                      <OpenCue label="case study" />
+                    </p>
+
                     {project.productUrl ? (
                       <p className="mt-4">
                         <a
@@ -104,6 +110,8 @@ export function Work({ projects }: { projects: ProjectSummary[] }) {
             )
           })}
         </ol>
+
+        <DrumSkip to="#photography" label="Skip the projects and go to Photography" />
       </div>
     </div>
   )

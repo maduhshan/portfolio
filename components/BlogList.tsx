@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { OpenCue } from '@/components/OpenCue'
 import { formatDate } from '@/lib/format'
 import type { BlogEntry } from '@/lib/types'
 
@@ -43,6 +44,10 @@ export function BlogList({
             {entry.excerpt ? (
               <p className="text-muted mt-3 line-clamp-2 text-small">{entry.excerpt}</p>
             ) : null}
+
+            <p className="mt-4">
+              <OpenCue label={entry.source === 'medium' ? 'read here' : 'read'} />
+            </p>
           </div>
         </li>
       ))}

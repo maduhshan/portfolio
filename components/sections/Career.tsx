@@ -2,6 +2,8 @@
 
 import { useEffect, useState, type CSSProperties } from 'react'
 
+import { OpenCue } from '@/components/OpenCue'
+import { DrumSkip } from '@/components/drum/DrumSkip'
 import { useDrum } from '@/components/drum/useDrum'
 import { formatRange, monthDiff, monthsBetween, yearOf } from '@/lib/format'
 import type { Role } from '@/lib/types'
@@ -165,7 +167,7 @@ export function Career({ roles }: { roles: Role[] }) {
                 <li
                   key={role._id}
                   data-role-index={index}
-                  className="drum-face border-rule border-b"
+                  className="drum-face work-row border-rule border-b"
                   style={{ '--i': index } as CSSProperties}
                   onMouseEnter={() => setScrolledTo(index)}
                 >
@@ -174,7 +176,7 @@ export function Career({ roles }: { roles: Role[] }) {
                       <h3 className={current ? 'heading-1' : 'heading-2'}>
                         {role.companyUrl ? (
                           <a
-                            className="link-quiet"
+                            className="link-quiet work-link"
                             href={role.companyUrl}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -211,6 +213,12 @@ export function Career({ roles }: { roles: Role[] }) {
                       </p>
                     ) : null}
 
+                    {role.companyUrl ? (
+                      <p className="mt-6">
+                        <OpenCue label="company" external />
+                      </p>
+                    ) : null}
+
                     {role.highlights && role.highlights.length > 0 ? (
                       <ul
                         className={`tick-list measure space-y-1.5 ${role.summary ? 'mt-4' : 'mt-5'}`}
@@ -227,6 +235,8 @@ export function Career({ roles }: { roles: Role[] }) {
               )
             })}
           </ol>
+
+          <DrumSkip to="#work" label="Skip the career history and go to Selected work" />
         </div>
       </div>
     </div>

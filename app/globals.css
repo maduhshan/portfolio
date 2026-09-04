@@ -856,7 +856,7 @@
 
 [data-drum='on'] {
   position: relative;
-  height: calc(100dvh + (var(--faces) - 1) * var(--pitch));
+  height: calc(100dvh + (var(--faces) - 1) * var(--pitch) + var(--hold, 0px));
 }
 
 [data-drum='on'] .drum-stage {
@@ -865,6 +865,9 @@
   display: grid;
   align-content: center;
   height: 100dvh;
+  /* Sits above centre. Any higher and the face arriving from above clips
+     under the navigation. */
+  padding-bottom: 9vh;
   perspective: 1500px;
   perspective-origin: 50% 50%;
 }
@@ -901,8 +904,66 @@
    would make the geometry impossible. */
 [data-drum='on'] .drum-face__inner {
   height: 100%;
-  align-content: center;
-  padding-block: 0;
+  /* Content begins at the top of its box rather than floating in the middle
+     of it, so every face starts on the same line however long it runs. The
+     block padding stays, because the drum's height was measured with it. */
+  align-content: start;
+}
+
+/* Each face is a printed block: a square rectangle with a hard black offset.
+   No blur and no radius, so this is not the soft grey card the brief rules
+   out — it is closer to a plate lifted off the page. */
+[data-drum='on'] .drum-face {
+  background-color: var(--ground);
+  border: 1px solid var(--rule-strong);
+}
+
+/* Only the face square to the reader is lifted, and it is lifted properly:
+   a stack of hard offsets builds a solid black slab down the right and bottom
+   edges, then one soft cast puts the whole thing above the page. Still no
+   blur on the body of it and still no radius, so it reads as a printed block
+   rather than the soft grey card the brief rules out. */
+[data-drum='on'] .drum-face[data-front] {
+  box-shadow:
+    2px 2px 0 0 var(--color-hide),
+    4px 4px 0 0 var(--color-hide),
+    6px 6px 0 0 var(--color-hide),
+    8px 8px 0 0 var(--color-hide),
+    10px 10px 0 0 var(--color-hide),
+    12px 12px 0 0 var(--color-hide),
+    14px 14px 0 0 var(--color-hide),
+    16px 16px 0 0 var(--color-hide),
+    26px 26px 34px -8px color-mix(in oklab, var(--color-hide) 42%, transparent);
+  transition:
+    translate var(--duration-pull) var(--ease-focus),
+    box-shadow var(--duration-pull) var(--ease-focus);
+}
+
+/* Picking the box up. `translate` rather than `transform`, because the face's
+   transform is carrying the drum's rotation and must not be clobbered. */
+[data-drum='on'] .drum-face[data-front]:hover,
+[data-drum='on'] .drum-face[data-front]:focus-within {
+  translate: -5px -5px;
+  box-shadow:
+    2px 2px 0 0 var(--color-hide),
+    4px 4px 0 0 var(--color-hide),
+    6px 6px 0 0 var(--color-hide),
+    8px 8px 0 0 var(--color-hide),
+    10px 10px 0 0 var(--color-hide),
+    12px 12px 0 0 var(--color-hide),
+    14px 14px 0 0 var(--color-hide),
+    16px 16px 0 0 var(--color-hide),
+    18px 18px 0 0 var(--color-hide),
+    20px 20px 0 0 var(--color-hide),
+    32px 32px 40px -8px color-mix(in oklab, var(--color-hide) 50%, transparent);
+}
+
+/* Horizontal padding applies in both modes at this width, so the height the
+   drum measures while flat is the height it needs once boxed. */
+@media (min-width: 768px) {
+  .drum-face__inner {
+    padding-inline: 2rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -995,4 +1056,80 @@
    supplies the easing so the change is not a step. */
 .reading-light :is(p, li, h3) {
   transition: opacity var(--duration-shift) var(--ease-focus);
+}
+
+/* ── Telling people a box opens ──────────────────────────────────────────
+   These rows have been stretched links all along. The cue is what says so.
+   ──────────────────────────────────────────────────────────────────────── */
+.open-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--fg-muted);
+  transition: color var(--duration-pull) var(--ease-focus);
+}
+
+.open-cue__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--text-label--letter-spacing);
+  text-transform: lowercase;
+}
+
+.open-cue__ring {
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  transition:
+    background-color var(--duration-pull) var(--ease-focus),
+    color var(--duration-pull) var(--ease-focus);
+}
+
+.work-row:hover .open-cue,
+.work-row:focus-within .open-cue {
+  color: var(--fg);
+}
+
+.work-row:hover .open-cue__ring,
+.work-row:focus-within .open-cue__ring {
+  background-color: var(--fg);
+  color: var(--ground);
+}
+
+/* ── Skipping a drum ─────────────────────────────────────────────────────
+   Eight projects is four screens of scrolling. Anyone who does not want them
+   gets one button out. It is a real anchor, so it works without JavaScript
+   and lands on the next section's scroll margin.
+   ──────────────────────────────────────────────────────────────────────── */
+.drum-skip {
+  display: none;
+}
+
+[data-drum='on'] .drum-skip {
+  position: absolute;
+  bottom: 3.5vh;
+  left: 50%;
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+  color: var(--fg-muted);
+  background-color: var(--ground);
+  transition:
+    color var(--duration-pull) var(--ease-focus),
+    border-color var(--duration-pull) var(--ease-focus),
+    background-color var(--duration-pull) var(--ease-focus);
+}
+
+[data-drum='on'] .drum-skip:hover,
+[data-drum='on'] .drum-skip:focus-visible {
+  color: var(--ground);
+  background-color: var(--fg);
+  border-color: var(--fg);
 }

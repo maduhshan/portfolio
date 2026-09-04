@@ -178,10 +178,10 @@ export function SiteNav({
 
           {socials.length > 0 ? (
             <>
-              <span aria-hidden className="bg-rule-strong hidden h-3 w-px md:block" />
+              <span aria-hidden className="bg-rule-strong h-3 w-px" />
               {/* Named, and set in the same mono at the same ink as the name
                   beside them. Not a faded row of afterthoughts. */}
-              <ul className="hidden items-center gap-5 md:flex">
+              <ul className="flex items-center gap-4 md:gap-5">
                 {socials.map((link) => {
                   const Mark = marks[link.mark]
                   return (

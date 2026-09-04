@@ -27,6 +27,14 @@ const FALLOFF = 1.55
 /** Below this the drum is not worth the scroll cost and the flat list is better. */
 const MIN_WIDTH = 768
 
+/**
+ * Scroll held at the last face before the section releases, as a fraction of
+ * the viewport. Without it the drum reaches its final face and immediately
+ * begins sliding away, so the last project or role is the one you never get to
+ * read.
+ */
+const HOLD = 0.5
+
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n)
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
@@ -55,6 +63,11 @@ export function useDrum(count: number) {
     let live = false
     let seated = -1
 
+    /** The runway carries the drum's travel plus the hold at the end. */
+    function setHold() {
+      runway!.style.setProperty('--hold', `${window.innerHeight * HOLD}px`)
+    }
+
     function measure() {
       // Heights are only truthful while the faces are still in flow, so drop
       // out of drum mode to read them and go straight back in.
@@ -71,7 +84,9 @@ export function useDrum(count: number) {
     function render() {
       if (!live) return
       const box = runway!.getBoundingClientRect()
-      const travel = box.height - window.innerHeight
+      // The hold is scrolled through after the drum has finished turning, so
+      // it is excluded from the travel that drives rotation.
+      const travel = box.height - window.innerHeight - window.innerHeight * HOLD
       const progress = travel > 0 ? clamp01(-box.top / travel) : 0
       progressRef.current = progress
 
@@ -90,6 +105,9 @@ export function useDrum(count: number) {
         // Only the face square to the reader takes focus. The neighbours are
         // visible but turned away, and focus must not land on them.
         items[i].toggleAttribute('inert', offset >= 0.5)
+        // Only that face casts a shadow either. A tilted neighbour projects
+        // its offset into a grey diagonal wedge, which reads as a glitch.
+        items[i].toggleAttribute('data-front', offset < 0.5)
       }
 
       const nearest = Math.round(turned)
@@ -103,11 +121,13 @@ export function useDrum(count: number) {
       for (const item of items) {
         item.style.opacity = ''
         item.removeAttribute('inert')
+        item.removeAttribute('data-front')
       }
       delete runway!.dataset.drum
       drum!.style.removeProperty('--turn')
       drum!.style.removeProperty('--radius')
       drum!.style.removeProperty('--face-h')
+      runway!.style.removeProperty('--hold')
     }
 
     /** The drum is only worth having on a wide screen with motion allowed. */
@@ -115,6 +135,7 @@ export function useDrum(count: number) {
       const wanted = wide.matches && !reduced.matches
       if (wanted === live) {
         if (live) {
+          setHold()
           measure()
           render()
         }
@@ -123,6 +144,7 @@ export function useDrum(count: number) {
       live = wanted
       setLive(wanted)
       if (live) {
+        setHold()
         measure()
         runway!.dataset.drum = 'on'
         render()

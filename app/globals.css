@@ -1286,3 +1286,13 @@
 [data-drum='on'][data-collapsed] .drum {
   transition: transform var(--duration-shift) var(--ease-focus);
 }
+
+/* ── Reading inside a turning box ────────────────────────────────────────
+   The faces carry a 3D transform, which drops text off subpixel
+   antialiasing and onto greyscale. The same grey that reads fine flat looks
+   thinner and lighter here, and the role highlights are real reading, not
+   captions. One variable covers .label, .meta and .text-muted alike.
+   ──────────────────────────────────────────────────────────────────────── */
+.drum-face {
+  --fg-muted: color-mix(in oklab, var(--color-ink) 62%, var(--color-graphite));
+}

@@ -71,10 +71,17 @@ export function SiteNav({
   // assignment: assigning would scroll the page, and every section passed
   // would be another entry in the back button.
   useEffect(() => {
-    if (pathname !== '/' || !active) return
-    const wanted = `#${active}`
-    if (window.location.hash === wanted) return
-    window.history.replaceState(null, '', wanted)
+    if (pathname !== '/') return
+    const sync = () => {
+      // The hero is not a numbered section, so up there the address is just
+      // the page. Anywhere else it names what is being read.
+      const wanted = window.scrollY < 320 || !active ? '' : `#${active}`
+      if (wanted === window.location.hash) return
+      window.history.replaceState(null, '', wanted || window.location.pathname)
+    }
+    sync()
+    window.addEventListener('scroll', sync, { passive: true })
+    return () => window.removeEventListener('scroll', sync)
   }, [active, pathname])
 
   // The bar floats over sections on both grounds, so it takes the ground of
@@ -173,7 +180,7 @@ export function SiteNav({
         {/* A nameplate, not a status badge: one chip, a hairline, and the
             availability set at label size beside the name. */}
         <div className="bg-ground flex items-center gap-3 px-2 py-1">
-          <Link href="/" data-magnetic className="meta text-fg nav-item">
+          <Link href="/#top" data-magnetic className="meta text-fg nav-item">
             {name}
             <span className="sr-only"> — home</span>
           </Link>

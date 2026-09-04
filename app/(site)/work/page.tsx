@@ -1,68 +1,64 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import type { CSSProperties } from 'react'
 
 import { OpenCue } from '@/components/OpenCue'
 import { Plate } from '@/components/Plate'
-import { DrumSkip } from '@/components/drum/DrumSkip'
-import { DrumStep } from '@/components/drum/DrumStep'
-import { useDrum } from '@/components/drum/useDrum'
-import type { ProjectSummary } from '@/lib/types'
+import { getProjects } from '@/lib/content'
+
+export const revalidate = 3600
+
+export const metadata: Metadata = {
+  title: 'Selected work',
+  description:
+    'Distributed systems and data platforms across payments, iGaming, ecommerce, publishing, insurance and security tooling.',
+  openGraph: { title: 'Selected work — Madushan Chathuranga', url: '/work' },
+}
 
 /**
- * The index of work, mounted on a drum. One project faces the reader, with the
- * one before and the one after visible above and below as part of the wheel.
+ * The full index, and where the heading on the home page points.
  *
- * Without JavaScript, on a narrow screen, or under prefers-reduced-motion this
- * is the plain ordered index it has always been.
+ * Flat on purpose. The drum on the home page is for reading one project at a
+ * time; this is for finding one, so everything is on a single screen you can
+ * scan rather than something you have to turn through.
  */
-
-/** How much scrolling advances one face. */
-const PITCH_VH = 42
-
-export function Work({ projects }: { projects: ProjectSummary[] }) {
+export default async function WorkIndexPage() {
+  const projects = await getProjects()
   const ordered = [...projects].sort((a, b) => a.order - b.order)
-  const faces = ordered.length
-  const { runwayRef, drumRef, front, direction, seek } = useDrum(faces)
 
   return (
-    <div
-      ref={runwayRef}
-      className="drum-runway"
-      style={{ '--faces': faces, '--pitch': `${PITCH_VH}vh` } as CSSProperties}
-    >
-      <div className="drum-stage">
-        <p className="label drum-count" aria-hidden="true">
-          {String(front + 1).padStart(2, '0')} / {String(faces).padStart(2, '0')}
+    <div className="pt-32 pb-24">
+      <header className="shell">
+        <Link className="meta link" href="/#work">
+          Back to the site
+        </Link>
+        <h1 className="heading-1 mt-10">Selected work</h1>
+        <p className="measure text-muted mt-5 text-small">
+          Distributed systems and data platforms. The domains move around a lot. The problems
+          underneath do not change much.
         </p>
+      </header>
 
-        <ol ref={drumRef} className="drum border-rule border-t">
+      <div className="shell mt-14">
+        <ol className="border-rule border-t">
           {ordered.map((project, index) => {
             const cover = project.coverImage
             const showPlate = Boolean(cover?.asset?.url)
 
             return (
-              <li
-                key={project._id}
-                className="drum-face work-row border-rule border-b"
-                style={{ '--i': index } as CSSProperties}
-              >
+              <li key={project._id} className="work-row border-rule border-b">
                 <div
-                  className={`drum-face__inner grid grid-cols-[2.25rem_1fr] items-start gap-x-6 gap-y-4 py-8 ${
-                    showPlate
-                      ? 'md:grid-cols-[3rem_1fr_16rem] md:py-12'
-                      : 'md:grid-cols-[3rem_1fr] md:py-12'
+                  className={`grid grid-cols-[2.25rem_1fr] items-start gap-x-6 gap-y-4 py-8 ${
+                    showPlate ? 'md:grid-cols-[3rem_1fr_11rem] md:py-10' : 'md:grid-cols-[3rem_1fr] md:py-10'
                   }`}
                 >
                   <span className="label pt-2">{String(index + 1).padStart(2, '0')}</span>
 
                   <div>
-                    <h3 className="heading-1">
+                    <h2 className="heading-2">
                       <Link className="work-link" href={`/work/${project.slug}`}>
                         {project.title}
                       </Link>
-                    </h3>
+                    </h2>
 
                     <p className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
                       <span className="text-small">{project.organisation}</span>
@@ -77,7 +73,7 @@ export function Work({ projects }: { projects: ProjectSummary[] }) {
                       ))}
                     </ul>
 
-                    <p className="mt-6">
+                    <p className="mt-5">
                       <OpenCue label="case study" />
                     </p>
 
@@ -96,12 +92,12 @@ export function Work({ projects }: { projects: ProjectSummary[] }) {
                   </div>
 
                   {showPlate ? (
-                    <div className="hidden md:block">
+                    <div className="work-plate hidden md:block">
                       <Plate
                         src={cover?.asset?.url}
                         alt={cover?.alt ?? ''}
                         aspect="4 / 3"
-                        sizes="(max-width: 768px) 0px, 16rem"
+                        sizes="(max-width: 768px) 0px, 11rem"
                         blurDataURL={cover?.asset?.metadata?.lqip}
                       />
                     </div>
@@ -111,16 +107,6 @@ export function Work({ projects }: { projects: ProjectSummary[] }) {
             )
           })}
         </ol>
-
-        <DrumStep front={front} count={faces} onSeek={seek} label="projects" />
-
-        <DrumSkip
-          direction={direction}
-          down="#photography"
-          up="#career"
-          downLabel="Skip the projects and go to Photography"
-          upLabel="Skip the projects and go back to Career"
-        />
       </div>
     </div>
   )

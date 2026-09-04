@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 /**
  * Scroll-driven rotation on one horizontal axis.
@@ -24,8 +24,13 @@ const DWELL = 0.32
  */
 const FALLOFF = 1.55
 
-/** Below this the drum is not worth the scroll cost and the flat list is better. */
-const MIN_WIDTH = 768
+/**
+ * Below this the drum is not worth the scroll cost and the flat list is better.
+ * Phones are well above it: the tallest face measures 488px against a 780px
+ * viewport, so a box fits with room to spare, and the skip button and arrows
+ * are if anything more useful on touch than they are with a scroll wheel.
+ */
+const MIN_WIDTH = 360
 
 /**
  * Scroll held at the last face before the section releases, as a fraction of
@@ -34,6 +39,9 @@ const MIN_WIDTH = 768
  * read.
  */
 const HOLD = 0.5
+
+/** Ignore scroll jitter smaller than this when deciding which way we are going. */
+const DIRECTION_THRESHOLD = 6
 
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n)
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
@@ -46,8 +54,10 @@ export function useDrum(count: number) {
   const drumRef = useRef<HTMLOListElement>(null)
   const [front, setFront] = useState(0)
   const [live, setLive] = useState(false)
-  /** 0 to 1 across the whole drum, for anything that wants to track it. */
-  const progressRef = useRef(0)
+  /** Which way the reader is going, so the skip button can point that way. */
+  const [direction, setDirection] = useState<'down' | 'up'>('down')
+  /** Set inside the effect; called from the arrows and the skip button. */
+  const seekRef = useRef<(index: number, smooth: boolean) => void>(() => {})
 
   useBeforePaint(() => {
     const runway = runwayRef.current
@@ -62,10 +72,16 @@ export function useDrum(count: number) {
     const halfStep = (step / 2) * (Math.PI / 180)
     let live = false
     let seated = -1
+    let lastY = window.scrollY
 
     /** The runway carries the drum's travel plus the hold at the end. */
     function setHold() {
       runway!.style.setProperty('--hold', `${window.innerHeight * HOLD}px`)
+    }
+
+    /** Scroll distance that actually turns the drum, hold excluded. */
+    function travelOf(height: number) {
+      return height - window.innerHeight - window.innerHeight * HOLD
     }
 
     function measure() {
@@ -81,14 +97,24 @@ export function useDrum(count: number) {
       drum!.style.setProperty('--radius', `${height / 2 / Math.tan(halfStep)}px`)
     }
 
+    /** Put a given face square to the reader. */
+    seekRef.current = (index: number, smooth: boolean) => {
+      if (!live) return
+      const box = runway!.getBoundingClientRect()
+      const travel = travelOf(box.height)
+      if (travel <= 0) return
+      const wanted = box.top + window.scrollY + clamp01(index / (count - 1)) * travel
+      window.scrollTo({
+        top: wanted,
+        behavior: smooth && !reduced.matches ? 'smooth' : 'instant',
+      })
+    }
+
     function render() {
       if (!live) return
       const box = runway!.getBoundingClientRect()
-      // The hold is scrolled through after the drum has finished turning, so
-      // it is excluded from the travel that drives rotation.
-      const travel = box.height - window.innerHeight - window.innerHeight * HOLD
+      const travel = travelOf(box.height)
       const progress = travel > 0 ? clamp01(-box.top / travel) : 0
-      progressRef.current = progress
 
       // Linear scroll would strand the drum between two faces for half its
       // travel. Easing inside each step makes it dwell on a face and turn
@@ -157,6 +183,11 @@ export function useDrum(count: number) {
 
     let ticking = false
     function onScroll() {
+      const y = window.scrollY
+      if (Math.abs(y - lastY) > DIRECTION_THRESHOLD) {
+        setDirection(y > lastY ? 'down' : 'up')
+        lastY = y
+      }
       if (ticking || !live) return
       ticking = true
       requestAnimationFrame(() => {
@@ -187,5 +218,10 @@ export function useDrum(count: number) {
     }
   }, [count])
 
-  return { runwayRef, drumRef, front, live, progressRef }
+  /** Step one face at a time. Smooth, because a single step is worth seeing. */
+  const seek = useCallback((index: number) => {
+    seekRef.current(Math.max(0, Math.min(index, count - 1)), true)
+  }, [count])
+
+  return { runwayRef, drumRef, front, live, direction, seek }
 }

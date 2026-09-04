@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react'
 
 import { OpenCue } from '@/components/OpenCue'
 import { DrumSkip } from '@/components/drum/DrumSkip'
+import { DrumStep } from '@/components/drum/DrumStep'
 import { useDrum } from '@/components/drum/useDrum'
 import { formatRange, monthDiff, monthsBetween, yearOf } from '@/lib/format'
 import type { Role } from '@/lib/types'
@@ -30,7 +31,7 @@ const PITCH_VH = 46
 
 export function Career({ roles }: { roles: Role[] }) {
   const ordered = [...roles].sort((a, b) => a.order - b.order)
-  const { runwayRef, drumRef, front, live } = useDrum(ordered.length)
+  const { runwayRef, drumRef, front, live, direction, seek } = useDrum(ordered.length)
   const [scrolledTo, setScrolledTo] = useState(0)
   const active = live ? front : scrolledTo
 
@@ -236,7 +237,15 @@ export function Career({ roles }: { roles: Role[] }) {
             })}
           </ol>
 
-          <DrumSkip to="#work" label="Skip the career history and go to Selected work" />
+          <DrumStep front={front} count={ordered.length} onSeek={seek} label="roles" />
+
+          <DrumSkip
+            direction={direction}
+            down="#work"
+            up="#about"
+            downLabel="Skip the career history and go to Selected work"
+            upLabel="Skip the career history and go back up"
+          />
         </div>
       </div>
     </div>

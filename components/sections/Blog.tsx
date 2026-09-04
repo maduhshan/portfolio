@@ -12,7 +12,7 @@ export function Blog({
   profileUrl: string | null
 }) {
   return (
-    <Section id="blog" index="04" title="Blog">
+    <Section id="blog" index="04" title="Blog" href="/blog">
       {entries.length > 0 ? (
         <>
           <BlogList entries={entries.slice(0, 4)} />

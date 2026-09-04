@@ -26,7 +26,7 @@ export function Photography({
   const handle = instagramHandle(instagram)
 
   return (
-    <Section id="photography" index="03" title="Photography" ground="hide">
+    <Section id="photography" index="03" title="Photography" href="/photography" ground="hide">
       {frames.length > 0 && instagram && handle ? (
         <>
           <InstagramPreview

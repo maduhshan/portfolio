@@ -958,8 +958,22 @@
     32px 32px 40px -8px color-mix(in oklab, var(--color-hide) 50%, transparent);
 }
 
-/* Horizontal padding applies in both modes at this width, so the height the
-   drum measures while flat is the height it needs once boxed. */
+/* Horizontal padding applies in both modes, so the height the drum measures
+   while flat is the height it needs once boxed. Tighter on a phone, where the
+   box has far less width to give away. */
+.drum-face__inner {
+  padding-inline: 1.1rem;
+}
+
+/* On a phone the arrows sit inside the box, so the content has to keep clear
+   of them or the stack runs underneath. Reserved in both modes, because the
+   drum measures its height while flat. */
+@media (max-width: 767px) {
+  .drum-face__inner {
+    padding-right: 3.5rem;
+  }
+}
+
 @media (min-width: 768px) {
   .drum-face__inner {
     padding-inline: 2rem;
@@ -1132,4 +1146,75 @@
   color: var(--ground);
   background-color: var(--fg);
   border-color: var(--fg);
+}
+
+/* ── Turning the drum by hand ────────────────────────────────────────────
+   Stacked on the right edge of the stage, so the wheel can be worked without
+   the scroll wheel. Hidden with the flat list, where there is nothing to turn.
+   ──────────────────────────────────────────────────────────────────────── */
+.drum-step {
+  display: none;
+}
+
+[data-drum='on'] .drum-step {
+  position: absolute;
+  /* On a phone the box nearly fills the screen, so the arrows sit on its
+     edge. From md up there is gutter to straddle. */
+  right: 0;
+  top: 50%;
+  translate: 0 -50%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 2;
+}
+
+.drum-step__button {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+  color: var(--fg-muted);
+  background-color: var(--ground);
+  transition:
+    color var(--duration-pull) var(--ease-focus),
+    border-color var(--duration-pull) var(--ease-focus),
+    background-color var(--duration-pull) var(--ease-focus),
+    opacity var(--duration-pull) var(--ease-focus);
+}
+
+.drum-step__button:hover:not(:disabled),
+.drum-step__button:focus-visible:not(:disabled) {
+  color: var(--ground);
+  background-color: var(--fg);
+  border-color: var(--fg);
+}
+
+.drum-step__button:disabled {
+  opacity: 0.25;
+}
+
+/* ── Section headings that go somewhere ──────────────────────────────────
+   Photography and Blog have their own pages. Career and Selected work point
+   at themselves, which on a drum is the way back to its first item.
+   ──────────────────────────────────────────────────────────────────────── */
+.section-link {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+  text-decoration-color: transparent;
+  transition: text-decoration-color var(--duration-pull) var(--ease-focus);
+}
+
+.section-link:hover,
+.section-link:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+@media (min-width: 768px) {
+  [data-drum='on'] .drum-step {
+    right: -1.15rem;
+  }
 }

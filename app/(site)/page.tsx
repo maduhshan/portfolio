@@ -80,7 +80,7 @@ export default async function HomePage() {
       <Section id="career" index="01" title="Career">
         <Career roles={roles} />
       </Section>
-      <Section id="work" index="02" title="Selected work">
+      <Section id="work" index="02" title="Selected work" href="/work">
         <Work projects={projects} />
       </Section>
       <Photography

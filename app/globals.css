@@ -1,0 +1,820 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Design tokens. The system is documented in DESIGN.md — read that first.
+   Five greys, two faces, one modular scale. There is no accent colour: the
+   only saturated pixels on this site come out of a photograph.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Palette — anchored to what a photographer references: the print base,
+     the 18% metering card, and the dark of a hide before dawn. */
+  --color-paper: #e7e8e5;
+  --color-ink: #141715;
+  --color-graphite: #5b615d;
+  --color-grey-18: #767b78;
+  --color-hide: #0b0d0c;
+
+  /* Type */
+  --font-display: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.45;
+  --text-label--letter-spacing: 0.08em;
+
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.5;
+
+  --text-small: 0.9375rem;
+  --text-small--line-height: 1.6;
+
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.62;
+
+  --text-t3: 1.3rem;
+  --text-t3--line-height: 1.35;
+
+  --text-t2: clamp(1.55rem, 1.3rem + 1vw, 2rem);
+  --text-t2--line-height: 1.2;
+
+  --text-t1: clamp(2.1rem, 1.5rem + 2.4vw, 3.25rem);
+  --text-t1--line-height: 1.08;
+
+  /* Counts are set in mono, like everything else a machine produced. */
+  --text-figure: clamp(2.5rem, 1.6rem + 3vw, 3.75rem);
+
+  --text-display: clamp(3rem, 1.2rem + 7.5vw, 8rem);
+  --text-display--line-height: 0.92;
+
+  /* No rounded cards anywhere. A plate has a 1px corner at most. */
+  --radius-*: initial;
+  --radius-none: 0px;
+  --radius-plate: 1px;
+  --radius-dot: 9999px;
+
+  /* Motion. One easing, three durations. Everything answers an action. */
+  --ease-focus: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-tick: 120ms;
+  --duration-pull: 260ms;
+  --duration-shift: 480ms;
+}
+
+/* ── Contextual ground ────────────────────────────────────────────────────
+   The site has two grounds: paper where the work is engineering, hide where
+   the work is field. Sections carry data-ground and everything inside them
+   resolves through these four variables.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root,
+[data-ground='paper'] {
+  --ground: var(--color-paper);
+  --fg: var(--color-ink);
+  --fg-muted: var(--color-graphite);
+  --rule: color-mix(in oklab, var(--color-ink) 14%, transparent);
+  --rule-strong: color-mix(in oklab, var(--color-ink) 40%, transparent);
+  --reticle: var(--color-ink);
+  color-scheme: light;
+}
+
+[data-ground='hide'] {
+  --ground: var(--color-hide);
+  --fg: var(--color-paper);
+  --fg-muted: var(--color-grey-18);
+  --rule: color-mix(in oklab, var(--color-paper) 18%, transparent);
+  --rule-strong: color-mix(in oklab, var(--color-paper) 44%, transparent);
+  --reticle: var(--color-paper);
+  color-scheme: dark;
+}
+
+@utility bg-ground {
+  background-color: var(--ground);
+}
+@utility text-fg {
+  color: var(--fg);
+}
+@utility text-muted {
+  color: var(--fg-muted);
+}
+@utility border-rule {
+  border-color: var(--rule);
+}
+@utility border-rule-strong {
+  border-color: var(--rule-strong);
+}
+@utility bg-rule {
+  background-color: var(--rule);
+}
+@utility bg-rule-strong {
+  background-color: var(--rule-strong);
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-padding-top: 6rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    background-color: var(--ground);
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  /* Newsreader italic is reserved for species names and photographic
+     captions — field-guide convention. Nothing else on the site is italic. */
+  em {
+    font-style: italic;
+  }
+
+  ::selection {
+    background-color: var(--fg);
+    color: var(--ground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--fg);
+    outline-offset: 3px;
+    border-radius: 1px;
+  }
+
+  /* The reticle replaces the pointer only when the provider says so. */
+  html[data-cursor='reticle'],
+  html[data-cursor='reticle'] a,
+  html[data-cursor='reticle'] button,
+  html[data-cursor='reticle'] [role='button'] {
+    cursor: none;
+  }
+
+  ol,
+  ul {
+    list-style: none;
+  }
+
+  ::-webkit-details-marker {
+    display: none;
+  }
+}
+
+/* ── Layout primitives ───────────────────────────────────────────────────── */
+
+@layer components {
+  /* The single left datum every heading, row and paragraph hangs from. */
+  .shell {
+    width: 100%;
+    max-width: 82rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 5vw, 4.5rem);
+  }
+
+  .measure {
+    max-width: 68ch;
+  }
+
+  /* Lowercase mono field label. Not an ALL-CAPS tracked eyebrow. */
+  .label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    line-height: var(--text-label--line-height);
+    letter-spacing: var(--text-label--letter-spacing);
+    font-weight: 500;
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .meta {
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .display {
+    font-size: var(--text-display);
+    line-height: var(--text-display--line-height);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+  }
+
+  .heading-1 {
+    font-size: var(--text-t1);
+    line-height: var(--text-t1--line-height);
+    font-weight: 350;
+    letter-spacing: -0.015em;
+  }
+
+  .heading-2 {
+    font-size: var(--text-t2);
+    line-height: var(--text-t2--line-height);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  .heading-3 {
+    font-size: var(--text-t3);
+    line-height: var(--text-t3--line-height);
+    font-weight: 500;
+  }
+
+  /* A quiet underline that thickens on interaction. No arrows, ever. */
+  .link {
+    color: var(--fg);
+    text-decoration: underline;
+    text-decoration-color: var(--rule-strong);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    transition: text-decoration-color var(--duration-tick) var(--ease-focus);
+  }
+  .link:hover,
+  .link:focus-visible {
+    text-decoration-color: var(--fg);
+  }
+
+  /* Prose rendered from portable text. Numbers marked as figures switch to
+     tabular mono at the same optical size — glanceable, no stat block. */
+  .prose > * + * {
+    margin-block-start: 1.1em;
+  }
+  .prose p {
+    max-width: 68ch;
+  }
+  .prose h3 {
+    font-size: var(--text-t3);
+    line-height: var(--text-t3--line-height);
+    font-weight: 500;
+    margin-block-start: 2em;
+  }
+  .prose strong {
+    font-family: var(--font-mono);
+    font-weight: 450;
+    font-size: 0.92em;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .prose code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    padding-inline: 0.3em;
+    background-color: var(--rule);
+  }
+  .prose ul {
+    padding-inline-start: 1.25rem;
+  }
+  .prose li {
+    position: relative;
+    margin-block-start: 0.35em;
+    max-width: 66ch;
+  }
+  .prose li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: -1.25rem;
+    inset-block-start: 0.72em;
+    width: 0.5rem;
+    height: 1px;
+    background-color: var(--rule-strong);
+  }
+}
+
+/* ── The focus-pull cursor ───────────────────────────────────────────────── */
+
+/* Photographs start soft and resolve as the reticle nears. The blur is only
+   ever applied by the provider, so no-JS and reduced-motion users get sharp
+   images rather than permanently soft ones. */
+[data-focus-target] {
+  transition: filter var(--duration-pull) var(--ease-focus);
+}
+
+[data-focus-target]:focus-visible,
+[data-focus-target]:focus-within {
+  filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+  [data-focus-target] {
+    filter: none !important;
+    transition: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Shell: skip link, navigation, route transition, reticle ─────────────── */
+
+@layer components {
+  .skip-link {
+    position: fixed;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 80;
+    transform: translateY(-250%);
+    background-color: var(--ground);
+    color: var(--fg);
+    border: 1px solid var(--rule-strong);
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+  }
+  .skip-link:focus-visible {
+    transform: none;
+  }
+
+  .nav-item {
+    display: inline-block;
+    color: var(--fg-muted);
+    text-decoration: none;
+    position: relative;
+    transition:
+      color var(--duration-tick) var(--ease-focus),
+      transform var(--duration-pull) var(--ease-focus);
+  }
+  .nav-item:hover,
+  .nav-item:focus-visible {
+    color: var(--fg);
+  }
+  .nav-item[data-active='true'] {
+    color: var(--fg);
+  }
+  .nav-item[data-active='true']::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: -4px;
+    height: 1px;
+    background-color: var(--fg);
+  }
+
+  /* Not a black panel. The page stays visible through a wash of paper and goes
+     out of focus behind it, which is the same idea as the focus-pull cursor:
+     what you are not looking at softens. The blur is what keeps ink legible
+     over the dark sections as well as the light ones. */
+  .nav-dialog {
+    position: fixed;
+    inset: auto clamp(1.25rem, 5vw, 4.5rem) auto auto;
+    top: 4.75rem;
+    width: min(15rem, calc(100vw - 2.5rem));
+    max-width: none;
+    height: auto;
+    max-height: min(70vh, 28rem);
+    margin: 0;
+    padding: 0;
+    border: 1px solid color-mix(in oklab, var(--color-ink) 16%, transparent);
+    background-color: transparent;
+    color: var(--color-ink);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* The wash and the blur live on a pseudo-element, not on the dialog itself.
+     backdrop-filter would make the dialog a containing block for position:fixed
+     descendants, and the cursor reticle moves in here when the menu opens —
+     it would end up positioned against the panel instead of the viewport. */
+  .nav-dialog::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: color-mix(in oklab, var(--color-paper) 82%, transparent);
+    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px);
+  }
+  .nav-dialog::backdrop {
+    background-color: transparent;
+  }
+
+  /* In the bar an underline marks the active section. In the panel the rows are
+     already full width, so that underline lands on top of the row divider and
+     reads as a heavy rule. Colour alone carries it here. */
+  .nav-dialog .nav-item[data-active='true']::after {
+    content: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-dialog::before {
+      background-color: color-mix(in oklab, var(--color-paper) 96%, transparent);
+    }
+  }
+
+  /* The route transition: the page resolves from soft to sharp. Nothing moves. */
+  .page-resolve {
+    animation: resolve var(--duration-shift) var(--ease-focus) both;
+  }
+  @keyframes resolve {
+    from {
+      filter: blur(3px);
+      opacity: 0.8;
+    }
+    to {
+      filter: none;
+      opacity: 1;
+    }
+  }
+}
+
+/* The reticle. Difference blending makes it the photographic negative of
+   whatever is behind it, so it inverts with the background rather than picking
+   a colour and hoping.
+   The strokes are near-opaque on purpose: at 50% white the blend lands on mid
+   grey, which reads fine against the dark ground and almost disappears against
+   paper. At full strength it resolves to near black on paper and near white on
+   hide. Locking pushes the ring the rest of the way. */
+.reticle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  opacity: 0;
+  transition: opacity var(--duration-pull) var(--ease-focus);
+}
+.reticle[data-visible='true'] {
+  opacity: 1;
+}
+.reticle__ring {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border: 1px solid rgb(255 255 255 / 0.78);
+  border-radius: 50%;
+  transition:
+    transform var(--duration-pull) var(--ease-focus),
+    border-color var(--duration-tick) var(--ease-focus);
+}
+.reticle[data-lock='true'] .reticle__ring {
+  transform: scale(0.68);
+  border-color: rgb(255 255 255);
+}
+.reticle__tick {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 0 solid rgb(255 255 255);
+  transition: transform var(--duration-pull) var(--ease-focus);
+}
+.reticle__tick--tl {
+  margin: -20px 0 0 -20px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.reticle__tick--tr {
+  margin: -20px 0 0 13px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.reticle__tick--bl {
+  margin: 13px 0 0 -20px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.reticle__tick--br {
+  margin: 13px 0 0 13px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+.reticle[data-lock='true'] .reticle__tick--tl {
+  transform: translate(3px, 3px);
+}
+.reticle[data-lock='true'] .reticle__tick--tr {
+  transform: translate(-3px, 3px);
+}
+.reticle[data-lock='true'] .reticle__tick--bl {
+  transform: translate(3px, -3px);
+}
+.reticle[data-lock='true'] .reticle__tick--br {
+  transform: translate(-3px, -3px);
+}
+
+@media (forced-colors: active) {
+  .reticle {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reticle {
+    display: none;
+  }
+  .page-resolve {
+    animation: none;
+  }
+}
+
+@layer components {
+  /* The plate is cropped by the frame edge, the way a viewfinder crops. */
+  @media (min-width: 768px) {
+    .bleed-e {
+      margin-inline-end: calc(-1 * clamp(1.25rem, 5vw, 4.5rem));
+    }
+  }
+
+  /* Restrained nested list: a hairline instead of a bullet. */
+  .tick-list li {
+    position: relative;
+    padding-inline-start: 1.25rem;
+  }
+  .tick-list li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 0.72em;
+    width: 0.5rem;
+    height: 1px;
+    background-color: var(--rule-strong);
+  }
+}
+
+@layer components {
+  /* The work index: a list of plates, the way a monograph indexes its images.
+     The title is the link; the whole row is the target. */
+  .work-row {
+    position: relative;
+  }
+  .work-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  /* A row is a stretched link, so anything else clickable inside it has to
+     sit above the overlay or it cannot be reached. */
+  .work-row a:not(.work-link) {
+    position: relative;
+    z-index: 1;
+  }
+  .work-plate {
+    opacity: 0;
+    transition: opacity var(--duration-pull) var(--ease-focus);
+  }
+  .work-row:hover .work-plate,
+  .work-row:focus-within .work-plate {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .work-plate {
+      opacity: 1;
+    }
+  }
+}
+
+@layer components {
+  /* The gallery is not a uniform grid: spans vary so the strongest frames get
+     more room. Each item carries its own --span. */
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: clamp(0.75rem, 2vw, 2rem);
+    row-gap: clamp(2rem, 5vw, 4.5rem);
+  }
+  .gallery > li {
+    grid-column: span 12;
+  }
+  @media (min-width: 768px) {
+    .gallery > li {
+      grid-column: span var(--span, 6);
+    }
+  }
+
+  .lightbox {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    /* The scrim borrows its colour from the photograph on screen. */
+    background-color: var(--scrim, #0b0d0c);
+    color: var(--color-paper);
+  }
+  .lightbox::backdrop {
+    background-color: rgb(11 13 12 / 0.94);
+  }
+}
+
+@layer components {
+  /* A link that does not announce itself on every row of a list. The underline
+     is there from the start but transparent, so it can fade in on interaction
+     without the text shifting. No arrow glyph, ever. */
+  .link-quiet {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.16em;
+    transition: text-decoration-color var(--duration-tick) var(--ease-focus);
+  }
+  .link-quiet:hover,
+  .link-quiet:focus-visible {
+    text-decoration-color: var(--fg);
+  }
+}
+
+/* ── The opening portrait ────────────────────────────────────────────────
+   Greyscale on purpose. The interface is monochrome and photographs are the
+   only colour, so a photograph of him belongs to the interface and colour
+   stays reserved for the animals. Done in CSS rather than baked into the file,
+   so a portrait uploaded through Studio gets the same treatment.
+   ──────────────────────────────────────────────────────────────────────── */
+.portrait img {
+  filter: grayscale(1) contrast(1.06) brightness(1.02);
+}
+
+/* A little grain, for a print rather than a screenshot. */
+.portrait::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-size: 160px 160px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23g)'/></svg>");
+}
+
+@media (forced-colors: active) {
+  .portrait img {
+    filter: none;
+  }
+  .portrait::after {
+    display: none;
+  }
+}
+
+/* ── Long-form articles ──────────────────────────────────────────────────
+   Medium's HTML rendered in this site's type scale rather than Medium's.
+   ──────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  .article h2 {
+    font-size: var(--text-t2);
+    line-height: var(--text-t2--line-height);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin-block-start: 2.4em;
+  }
+  .article h3 {
+    margin-block-start: 2em;
+  }
+  .article figure {
+    margin-block: 2.5em;
+  }
+  .article figure img {
+    display: block;
+  }
+  .article figcaption {
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
+    color: var(--fg-muted);
+    margin-block-start: 0.75rem;
+  }
+  .article blockquote {
+    border-inline-start: 1px solid var(--rule-strong);
+    padding-inline-start: 1.25rem;
+    margin-block: 1.6em;
+    color: var(--fg-muted);
+  }
+  .article ol {
+    padding-inline-start: 1.5rem;
+    list-style: decimal;
+  }
+  .article ol li::before {
+    content: none;
+  }
+  .article ol li::marker {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--fg-muted);
+  }
+  .article hr {
+    border: 0;
+    height: 1px;
+    background-color: var(--rule);
+    margin-block: 3em;
+  }
+
+  /* Code keeps its own newlines and scrolls sideways rather than wrapping. */
+  .code-block {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow-x: auto;
+    padding: 1.1rem 1.25rem;
+    margin-block: 1.8em;
+    background-color: color-mix(in oklab, var(--fg) 6%, transparent);
+    border-inline-start: 1px solid var(--rule-strong);
+    max-width: 100%;
+  }
+  .code-block code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+}
+
+@layer components {
+  /* Typed, not set: the competencies read as an index card that came out of a
+     machine. Smaller than the meta scale, tracked a little wider, ligatures
+     off, and given the airy leading of a typewriter platen. */
+  .typed {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    font-variant-ligatures: none;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Past the first screen the links fold away, leaving the nameplate and one
+     control. Scrolling is a user action, so this is motion the site is allowed.
+     visibility:hidden rather than opacity alone, so the folded links leave the
+     tab order instead of lurking in it. */
+  .nav-links {
+    transition:
+      opacity var(--duration-pull) var(--ease-focus),
+      transform var(--duration-pull) var(--ease-focus),
+      visibility var(--duration-pull);
+  }
+  .nav-links[data-folded='true'] {
+    opacity: 0;
+    transform: translateY(-5px);
+    visibility: hidden;
+  }
+
+  /* Always present on a narrow screen; on a wide one only once folded. */
+  .nav-toggle {
+    display: inline-flex;
+  }
+  @media (min-width: 768px) {
+    .nav-toggle {
+      display: none;
+    }
+    .nav-toggle[data-folded='true'] {
+      display: inline-flex;
+    }
+  }
+
+  .menu-glyph {
+    position: relative;
+    display: block;
+    width: 18px;
+    height: 9px;
+  }
+  .menu-glyph span {
+    position: absolute;
+    inset-inline: 0;
+    height: 1px;
+    background-color: currentColor;
+    transition: transform var(--duration-pull) var(--ease-focus);
+  }
+  .menu-glyph span:first-child {
+    top: 0;
+  }
+  .menu-glyph span:last-child {
+    bottom: 0;
+  }
+  .menu-glyph[data-open='true'] span:first-child {
+    transform: translateY(4px) rotate(45deg);
+  }
+  .menu-glyph[data-open='true'] span:last-child {
+    transform: translateY(-4px) rotate(-45deg);
+  }
+}
+
+@layer components {
+  /* The preview grid is one link, so it dims as one thing. */
+  .ig-preview img {
+    transition: opacity var(--duration-pull) var(--ease-focus);
+  }
+  .ig-preview:hover img,
+  .ig-preview:focus-visible img {
+    opacity: 0.78;
+  }
+}

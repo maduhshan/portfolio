@@ -40,7 +40,10 @@ export function HashLanding() {
     const surrender = () => {
       done = true
     }
-    const inputs = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const
+    // 'landing:taken' lets a section that knows better — Selected work
+    // returning to a particular project — own the landing without this one
+    // dragging it back to the top of the section.
+    const inputs = ['wheel', 'touchstart', 'keydown', 'pointerdown', 'landing:taken'] as const
     for (const name of inputs) {
       window.addEventListener(name, surrender, { passive: true })
     }

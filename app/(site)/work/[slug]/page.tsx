@@ -50,8 +50,10 @@ export default async function ProjectPage({ params }: PageProps) {
   return (
     <article className="pt-32 pb-24">
       <header className="shell">
-        <Link className="meta link" href="/#work">
-          Back to the index
+        {/* Carries the slug so the wheel comes back turned to this project
+            rather than to the first one. */}
+        <Link className="meta link" href={`/?work=${project.slug}#work`}>
+          Back to Selected work
         </Link>
 
         <div className="mt-10 grid gap-x-8 gap-y-8 md:grid-cols-12">

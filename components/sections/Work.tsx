@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import type { CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 
 import { OpenCue } from '@/components/OpenCue'
 import { Plate } from '@/components/Plate'
@@ -27,7 +27,64 @@ const AUTO_MS = 5000
 export function Work({ projects }: { projects: ProjectSummary[] }) {
   const ordered = [...projects].sort((a, b) => a.order - b.order)
   const faces = ordered.length
-  const { runwayRef, drumRef, front, direction, seek } = useDrum(faces, { autoMs: AUTO_MS })
+  const { runwayRef, drumRef, front, live, direction, seek } = useDrum(faces, {
+    autoMs: AUTO_MS,
+  })
+  const placed = useRef(false)
+  // A stable key, so the effect is not rescheduled on every render.
+  const slugs = ordered.map((project) => project.slug).join('|')
+
+  // Coming back from a case study. The link carries the project it belongs to,
+  // so the wheel returns turned to that one rather than to the front of it.
+  //
+  // Re-asserted a few times: the router does its own scroll to #work after the
+  // new page paints, and a single attempt loses that race. Abandoned the moment
+  // there is any real input.
+  useEffect(() => {
+    if (placed.current) return
+    const slug = new URLSearchParams(window.location.search).get('work')
+    if (!slug) {
+      placed.current = true
+      return
+    }
+    const index = slugs.split('|').indexOf(slug)
+    if (index < 0) {
+      placed.current = true
+      return
+    }
+
+    let cancelled = false
+    const stop = () => {
+      cancelled = true
+    }
+    const inputs = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const
+    for (const name of inputs) window.addEventListener(name, stop, { passive: true })
+
+    const place = () => {
+      if (cancelled) return
+      if (live) seek(index, false)
+      else
+        drumRef.current
+          ?.querySelector(`[data-project="${slug}"]`)
+          ?.scrollIntoView({ block: 'center' })
+    }
+
+    // Tell the generic hash landing to stand down; this one knows better.
+    window.dispatchEvent(new Event('landing:taken'))
+    // Spread past the router's scroll, which animates for roughly a second.
+    const timers = [0, 140, 420, 800, 1200].map((delay) => window.setTimeout(place, delay))
+    const settled = window.setTimeout(() => {
+      placed.current = true
+      // The slug has done its work; leave a clean address behind.
+      window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+    }, 1400)
+
+    return () => {
+      for (const timer of timers) window.clearTimeout(timer)
+      window.clearTimeout(settled)
+      for (const name of inputs) window.removeEventListener(name, stop)
+    }
+  }, [live, slugs, seek, drumRef])
 
   return (
     <div
@@ -49,6 +106,7 @@ export function Work({ projects }: { projects: ProjectSummary[] }) {
               <li
                 key={project._id}
                 className="drum-face work-row border-rule border-b"
+                data-project={project.slug}
                 style={{ '--i': index } as CSSProperties}
               >
                 <div

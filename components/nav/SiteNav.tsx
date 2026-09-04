@@ -92,7 +92,11 @@ export function SiteNav({
       // down with no section resolved yet — say nothing rather than clearing.
       const wanted = nearTop ? '' : active ? `#${active}` : null
       if (wanted === null || wanted === window.location.hash) return
-      window.history.replaceState(null, '', wanted || window.location.pathname)
+      // Built from the full path. A bare '#work' is resolved against the
+      // current address and would drop any query string with it, which is how
+      // the project a case study links back to went missing.
+      const base = window.location.pathname + window.location.search
+      window.history.replaceState(null, '', base + wanted)
     }
     // Also run on an active change, not only on scroll: after landing on a
     // section the observer resolves it with no further scrolling, and the

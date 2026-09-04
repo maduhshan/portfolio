@@ -88,9 +88,6 @@ if (typeof window !== 'undefined') {
   )
 }
 
-/** Chrome and Firefox correct for content resizing above the viewport. Safari does not. */
-const ANCHORING = typeof CSS !== 'undefined' && CSS.supports?.('overflow-anchor', 'auto')
-
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n)
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
@@ -205,10 +202,28 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       const below = box.top >= window.innerHeight
       if (!above && !below) return
 
-      // Anchor on the runway's own bottom edge in document space. That is the
-      // boundary everything below it follows, so matching it is exact —
-      // measuring the height instead leaves a few dozen pixels of drift.
-      const anchorBefore = box.bottom + window.scrollY
+      // Scroll anchoring would also try to correct for this, and the two
+      // corrections do not compose. Worse, it is not dependable: it fires when
+      // one runway folds and does nothing when both fold in the same frame,
+      // and then the scroll is simply clamped to the shorter document and the
+      // reader is thrown thousands of pixels down. So it is switched off for
+      // the duration of the change and the correction is made here, the same
+      // way in every browser. Safari, which has no anchoring at all, gets the
+      // same path as everything else.
+      const root = document.documentElement
+      const anchoring = root.style.overflowAnchor
+      root.style.overflowAnchor = 'none'
+
+      // Measure the whole document, not the runway's own edge. In Career the
+      // runway shares a grid row with the sticky rail, which has a minimum
+      // height of its own, so the runway's bottom can travel further than the
+      // content below the section actually does. The document height is what
+      // everything below the change genuinely follows.
+      const anchorBefore = document.documentElement.scrollHeight
+      // Captured before the change. Shrinking the document makes the browser
+      // clamp the scroll to the new maximum, and taking the delta off the
+      // already clamped value counts that clamp twice.
+      const scrollBefore = window.scrollY
       collapsed = next
       if (next) {
         runway!.dataset.collapsed = 'true'
@@ -218,19 +233,22 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       } else {
         delete runway!.dataset.collapsed
       }
-      const anchorAfter = runway!.getBoundingClientRect().bottom + window.scrollY
+      const anchorAfter = document.documentElement.scrollHeight
 
       // Shrinking something above the viewport pulls everything below it
-      // upwards. Chrome and Firefox already put that right themselves through
-      // scroll anchoring, and correcting it again on top doubles the movement
-      // and throws the reader to the top of the page. Safari has no scroll
-      // anchoring, so there it is on us.
-      if (above && !ANCHORING && anchorAfter !== anchorBefore) {
+      // upwards. Move the scroll by exactly that much and the view holds still.
+      if (above && anchorAfter !== anchorBefore) {
         window.scrollTo({
-          top: window.scrollY + (anchorAfter - anchorBefore),
+          top: scrollBefore + (anchorAfter - anchorBefore),
           behavior: 'instant',
         })
       }
+
+      // Restored a frame later, so anchoring cannot re-enter and adjust the
+      // layout this change produced.
+      requestAnimationFrame(() => {
+        root.style.overflowAnchor = anchoring
+      })
     }
 
     /** Put a given face square to the reader. */
@@ -478,9 +496,12 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
   }, [count, falloff, autoMs])
 
   /** Step one face at a time. Smooth, because a single step is worth seeing. */
-  const seek = useCallback((index: number) => {
-    seekRef.current(Math.max(0, Math.min(index, count - 1)), true)
-  }, [count])
+  const seek = useCallback(
+    (index: number, smooth = true) => {
+      seekRef.current(Math.max(0, Math.min(index, count - 1)), smooth)
+    },
+    [count],
+  )
 
   return { runwayRef, drumRef, front, live, direction, seek }
 }

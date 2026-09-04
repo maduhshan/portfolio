@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 
+import { NeuralField } from '@/components/field/NeuralField'
 import { newsreader, plexMono } from '@/lib/fonts'
 import { siteUrl } from '@/lib/site-url'
 
@@ -29,7 +30,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-ground="paper" className={`${newsreader.variable} ${plexMono.variable}`}>
-      <body className="bg-ground text-fg min-h-dvh">{children}</body>
+      <body className="bg-ground text-fg min-h-dvh">
+        <NeuralField />
+        {children}
+      </body>
     </html>
   )
 }

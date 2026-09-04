@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 
+import { useDrum } from '@/components/drum/useDrum'
 import { formatRange, monthDiff, monthsBetween, yearOf } from '@/lib/format'
 import type { Role } from '@/lib/types'
 
@@ -11,15 +12,26 @@ import type { Role } from '@/lib/types'
  * The rail on the left is a real time axis, running from January of the first
  * year worked to today with nothing truncated at either end. Band height is
  * proportional to months actually served, so a four-year tenure is visibly four
- * times a one-year one. The rail does not try to align pixel-for-pixel with the
- * prose — pointing at a role raises its band instead, so nothing can drift out
- * of register. The current role's band is open at the top.
+ * times a one-year one.
+ *
+ * The roles themselves sit on the same drum as Selected work: one role faces
+ * the reader, the one before and the one after visible above and below. The
+ * rail is what keeps the whole arc in view while the drum turns, and the
+ * marker rides down it as each role comes round.
+ *
+ * Below the breakpoint, or under prefers-reduced-motion, the drum never
+ * engages and this is the plain scrolling list it has always been.
  */
-export function Career({ roles }: { roles: Role[] }) {
-  const [active, setActive] = useState(0)
-  const listRef = useRef<HTMLOListElement>(null)
 
+/** How much scrolling advances one role. */
+const PITCH_VH = 46
+
+export function Career({ roles }: { roles: Role[] }) {
   const ordered = [...roles].sort((a, b) => a.order - b.order)
+  const { runwayRef, drumRef, front, live } = useDrum(ordered.length)
+  const [scrolledTo, setScrolledTo] = useState(0)
+  const active = live ? front : scrolledTo
+
   const earliest = ordered.reduce(
     (min, role) => (role.startDate < min ? role.startDate : min),
     ordered[0]?.startDate ?? new Date().toISOString(),
@@ -54,31 +66,32 @@ export function Career({ roles }: { roles: Role[] }) {
     ticks.push({
       year,
       top: ((totalMonths - position(`${year}-01-01`)) / totalMonths) * 100,
-      // Anchored to the first year, so the axis is always labelled where it
-      // starts rather than wherever the alternation happens to land.
       labelled: (year - firstYear) % 2 === 0,
     })
   }
 
-  // Scrolling a role into view raises its band too — the same signal, from the
-  // action the visitor is already taking.
+  // Only needed when the drum is not driving. On a narrow screen or under
+  // reduced motion the rail still has to follow what is being read.
   useEffect(() => {
-    const list = listRef.current
-    if (!list) return
-    const items = Array.from(list.querySelectorAll<HTMLElement>('[data-role-index]'))
+    if (live) return
+    const drum = drumRef.current
+    if (!drum) return
+    const items = Array.from(drum.querySelectorAll<HTMLElement>('[data-role-index]'))
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
         const first = visible[0]?.target as HTMLElement | undefined
-        if (first) setActive(Number(first.dataset.roleIndex))
+        if (first) setScrolledTo(Number(first.dataset.roleIndex))
       },
       { rootMargin: '-30% 0px -55% 0px' },
     )
     items.forEach((item) => observer.observe(item))
     return () => observer.disconnect()
-  }, [])
+  }, [live, drumRef])
+
+  const marker = bands[active]
 
   return (
     <div className="grid gap-x-8 md:grid-cols-[5rem_1fr]">
@@ -98,17 +111,15 @@ export function Career({ roles }: { roles: Role[] }) {
                 ) : null}
               </span>
             ))}
+
             {bands.map((band, index) => (
               <span
                 key={band.id}
-                className="absolute left-[2.3rem] w-1.5 transition-colors duration-200"
+                className="career-band absolute"
+                data-active={index === active ? 'true' : undefined}
                 style={{
                   top: `${band.top}%`,
                   height: `${band.height}%`,
-                  backgroundColor:
-                    index === active
-                      ? 'var(--fg)'
-                      : 'color-mix(in oklab, var(--fg) 22%, transparent)',
                   maskImage: band.current
                     ? 'linear-gradient(to bottom, transparent 0%, black 26%)'
                     : undefined,
@@ -118,72 +129,106 @@ export function Career({ roles }: { roles: Role[] }) {
                 }}
               />
             ))}
+
+            {/* Rides down the axis as each role comes round. */}
+            {marker ? (
+              <span
+                className="career-marker absolute"
+                style={{ top: `${marker.top + marker.height / 2}%` }}
+              />
+            ) : null}
           </div>
         </div>
       </div>
 
-      <ol ref={listRef}>
-        {ordered.map((role, index) => {
-          const months = monthsBetween(role.startDate, role.endDate)
-          const current = role.endDate === null
+      <div
+        ref={runwayRef}
+        className="drum-runway"
+        style={
+          {
+            '--faces': ordered.length,
+            '--pitch': `${PITCH_VH}vh`,
+          } as CSSProperties
+        }
+      >
+        <div className="drum-stage">
+          <p className="label drum-count" aria-hidden="true">
+            {String(active + 1).padStart(2, '0')} / {String(ordered.length).padStart(2, '0')}
+          </p>
 
-          return (
-            <li
-              key={role._id}
-              data-role-index={index}
-              className={`border-rule border-b first:pt-0 ${current ? 'py-10 md:py-12' : 'py-8'}`}
-              onMouseEnter={() => setActive(index)}
-            >
-              <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-                <h3 className={current ? 'heading-1' : 'heading-2'}>
-                  {role.companyUrl ? (
-                    <a
-                      className="link-quiet"
-                      href={role.companyUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {role.company}
-                    </a>
-                  ) : (
-                    role.company
-                  )}
-                </h3>
-                <p className="meta">{formatRange(role.startDate, role.endDate)}</p>
-              </div>
+          <ol ref={drumRef} className="drum">
+            {ordered.map((role, index) => {
+              const months = monthsBetween(role.startDate, role.endDate)
+              const current = role.endDate === null
 
-              <p className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <span className={current ? 'text-body' : 'text-small'}>{role.title}</span>
-                <span className="meta">{role.location}</span>
-              </p>
+              return (
+                <li
+                  key={role._id}
+                  data-role-index={index}
+                  className="drum-face border-rule border-b"
+                  style={{ '--i': index } as CSSProperties}
+                  onMouseEnter={() => setScrolledTo(index)}
+                >
+                  <div className={`drum-face__inner ${current ? 'py-10 md:py-12' : 'py-8'}`}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                      <h3 className={current ? 'heading-1' : 'heading-2'}>
+                        {role.companyUrl ? (
+                          <a
+                            className="link-quiet"
+                            href={role.companyUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {role.company}
+                          </a>
+                        ) : (
+                          role.company
+                        )}
+                      </h3>
+                      <p className="meta">{formatRange(role.startDate, role.endDate)}</p>
+                    </div>
 
-              {/* On narrow screens the rail collapses into this: the same scale,
-                  drawn per row. */}
-              <span
-                aria-hidden
-                className="bg-rule-strong mt-4 block h-px md:hidden"
-                style={{ width: `${Math.max((months / longest) * 100, 6)}%` }}
-              />
+                    <p className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                      <span className={current ? 'text-body' : 'text-small'}>{role.title}</span>
+                      <span className="meta">{role.location}</span>
+                    </p>
 
-              {role.summary ? (
-                <p className={`measure mt-4 ${current ? 'text-body' : 'text-muted text-small'}`}>
-                  {role.summary}
-                </p>
-              ) : null}
+                    {/* On narrow screens the rail collapses into this: the same
+                        scale, drawn per row. */}
+                    <span
+                      aria-hidden
+                      className="bg-rule-strong mt-4 block h-px md:hidden"
+                      style={{
+                        width: `${Math.max((months / longest) * 100, 6)}%`,
+                      }}
+                    />
 
-              {role.highlights && role.highlights.length > 0 ? (
-                <ul className={`tick-list measure space-y-1.5 ${role.summary ? 'mt-4' : 'mt-5'}`}>
-                  {role.highlights.map((highlight) => (
-                    <li key={highlight} className="text-muted text-small">
-                      {highlight}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </li>
-          )
-        })}
-      </ol>
+                    {role.summary ? (
+                      <p
+                        className={`measure mt-4 ${current ? 'text-body' : 'text-muted text-small'}`}
+                      >
+                        {role.summary}
+                      </p>
+                    ) : null}
+
+                    {role.highlights && role.highlights.length > 0 ? (
+                      <ul
+                        className={`tick-list measure space-y-1.5 ${role.summary ? 'mt-4' : 'mt-5'}`}
+                      >
+                        {role.highlights.map((highlight) => (
+                          <li key={highlight} className="text-muted text-small">
+                            {highlight}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      </div>
     </div>
   )
 }

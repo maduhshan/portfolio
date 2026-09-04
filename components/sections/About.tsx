@@ -1,3 +1,4 @@
+import { ReadingLight } from '@/components/about/ReadingLight'
 import { RichText } from '@/components/RichText'
 import { mediumProfileUrl } from '@/lib/links'
 import type { SiteSettings } from '@/lib/types'
@@ -28,14 +29,16 @@ export function About({ settings }: { settings: SiteSettings }) {
     <section
       id="about"
       data-ground="paper"
-      className="bg-ground text-fg scroll-mt-24 pt-14 pb-16 md:pt-16 md:pb-24"
+      className="ground-open text-fg scroll-mt-24 pt-14 pb-16 md:pt-16 md:pb-24"
     >
       <div className="shell">
         <div className="grid gap-x-12 gap-y-16 md:grid-cols-12">
           <div className="md:col-span-7">
-            {positioning.length > 0 ? <RichText value={positioning} /> : null}
+            <ReadingLight>
+              {positioning.length > 0 ? <RichText value={positioning} /> : null}
 
-            <RichText value={settings.bio} className="mt-6" />
+              <RichText value={settings.bio} className="mt-6" />
+            </ReadingLight>
 
             <div className="mt-10 flex flex-wrap items-baseline gap-x-8 gap-y-3">
               {settings.cvUrl ? (
@@ -59,7 +62,7 @@ export function About({ settings }: { settings: SiteSettings }) {
           {competencies.length > 0 ? (
             <div className="md:col-span-5 md:col-start-8">
               <h2 className="label">Competencies</h2>
-              <dl className="border-rule mt-3 border-t">
+              <dl className="competencies border-rule mt-3 border-t">
                 {competencies.map((competency) => (
                   <div key={competency.area} className="border-rule border-b py-2.5">
                     <dt className="typed text-muted">{competency.area}</dt>

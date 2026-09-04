@@ -115,7 +115,7 @@ export function Career({ roles }: { roles: Role[] }) {
               >
                 <span className="bg-rule-strong block h-px w-1.5" />
                 {tick.labelled ? (
-                  <span className="label hidden -translate-y-1/2 leading-none md:inline">
+                  <span className="label career-year -translate-y-1/2 leading-none">
                     {tick.year}
                   </span>
                 ) : null}

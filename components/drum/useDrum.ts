@@ -42,6 +42,14 @@ const MIN_WIDTH = 360
  */
 const HOLD = 0.5
 
+/**
+ * Share of the screen a face may take and still be worth mounting on a drum.
+ * A face taller than the viewport can never be read in one piece: it hangs off
+ * both ends, and the rotation is computed from a radius nothing can contain.
+ * Career roles on a narrow phone run past this, so they stay a flat list.
+ */
+const FITS = 0.93
+
 /** Ignore scroll jitter smaller than this when deciding which way we are going. */
 const DIRECTION_THRESHOLD = 6
 
@@ -117,6 +125,8 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
     let live = false
     let seated = -1
     let collapsed = false
+    /** Tallest face, measured flat. Decides whether a drum is viable at all. */
+    let tallest = 0
     /** Which face a folded drum is showing. Scroll cannot drive it any more. */
     let manual = 0
     let heading: 'down' | 'up' = 'down'
@@ -160,6 +170,7 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       let height = 0
       for (const item of items) height = Math.max(height, item.getBoundingClientRect().height)
       if (wasOn) runway!.dataset.drum = 'on'
+      tallest = height
       if (!height) return
       drum!.style.setProperty('--face-h', `${height}px`)
       runway!.style.setProperty('--face-h', `${height}px`)
@@ -305,11 +316,12 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
     /** The drum is only worth having on a wide screen with motion allowed. */
     function evaluate() {
       measureViewport()
-      const wanted = wide.matches && !reduced.matches
+      measure()
+      const roomy = tallest > 0 && tallest <= viewport * FITS
+      const wanted = wide.matches && !reduced.matches && roomy
       if (wanted === live) {
         if (live) {
           setHold()
-          measure()
           render()
         }
         return
@@ -318,7 +330,6 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       setLive(wanted)
       if (live) {
         setHold()
-        measure()
         runway!.dataset.drum = 'on'
         render()
       } else {

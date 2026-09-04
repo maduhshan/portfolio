@@ -1002,8 +1002,57 @@
    of them or the stack runs underneath. Reserved in both modes, because the
    drum measures its height while flat. */
 @media (max-width: 767px) {
-  .drum-face__inner {
-    padding-right: 3.5rem;
+  /* The arrows move to the corner of the stage on a phone rather than sitting
+     inside the box. A 3.5rem gutter was taking a fifth of the text width, and
+     every wrapped line it caused cost the box roughly 24px of height. */
+  /* Out of the box's way entirely, which is what lets a face use almost the
+     whole screen. */
+  [data-drum='on'] .drum-count {
+    top: auto;
+    bottom: 3vh;
+    left: auto;
+    right: 0.9rem;
+  }
+
+  [data-drum='on'] .drum-stage {
+    padding-bottom: 0;
+  }
+
+  /* Set tighter inside a face. The box has to fit a phone screen whole, or
+     the drum will not mount at all and the wheel is lost. */
+  .drum-face .drum-face__inner {
+    padding-block: 1.35rem;
+  }
+
+  .drum-face .heading-1 {
+    font-size: 1.85rem;
+    line-height: 1.1;
+  }
+
+  .drum-face .heading-2 {
+    font-size: 1.45rem;
+    line-height: 1.14;
+  }
+
+  .drum-face .text-body,
+  .drum-face .text-small,
+  .drum-face .tick-list li {
+    font-size: 0.85rem;
+    line-height: 1.44;
+  }
+
+  /* The gaps between blocks matter as much as the type when five highlights
+     are wrapping to six lines each. */
+  .drum-face .drum-face__inner > .mt-6 {
+    margin-top: 0.75rem;
+  }
+
+  .drum-face .drum-face__inner > .mt-4 {
+    margin-top: 0.6rem;
+  }
+
+  .drum-face .tick-list > * + * {
+    margin-top: 0.3rem;
   }
 
   /* Half the slab and no blurred cast. Nine hard offsets plus a soft shadow
@@ -1295,4 +1344,52 @@
    ──────────────────────────────────────────────────────────────────────── */
 .drum-face {
   --fg-muted: color-mix(in oklab, var(--color-ink) 72%, var(--color-graphite));
+}
+
+/* ── Phone placement for the wheel's controls ────────────────────────────
+   Stated after the base rules, which are appended later in this file and
+   would otherwise win on source order alone. The arrows and the counter sit
+   along the bottom so a face can use nearly the whole screen.
+   ──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* The pair sits astride the top edge of the box, where the face in focus
+     meets the one above it. Half over each, so it reads as the join between
+     them rather than as something floating in the margin. The box is centred
+     in the stage, so its top edge is half the leftover height. */
+  [data-drum='on'] .drum-step {
+    top: calc((100% - var(--face-h, 0px)) / 2);
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    translate: -50% -50%;
+    flex-direction: row;
+    gap: 0.6rem;
+  }
+
+  /* Folded, the stage is out of flow and the box starts at the top padding,
+     so the edge is there instead. */
+  [data-drum='on'][data-collapsed] .drum-step {
+    top: 7vh;
+  }
+}
+
+/* ── The axis on a phone ─────────────────────────────────────────────────
+   A timeline without years is just a bar. The rail is narrow there, so the
+   axis moves hard against the edge, the ticks shorten and the years are set
+   smaller, which is enough to fit them beside a box that still has to hold
+   five wrapped highlights.
+   ──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .career-rail {
+    --rail-x: 0.2rem;
+  }
+
+  .career-tick {
+    gap: 0.2rem;
+  }
+
+  .career-year {
+    font-size: 0.5625rem;
+    letter-spacing: 0.01em;
+  }
 }

@@ -77,6 +77,19 @@ export const siteSettings = defineType({
         'One or two plain sentences on the modes of work. Sits under the industries.',
     }),
     defineField({
+      name: 'caseStudyLabels',
+      type: 'object',
+      title: 'Case study headings',
+      description:
+        'The three headings on every case study page. Leave a field empty to keep the default.',
+      options: { collapsible: true, collapsed: true },
+      fields: [
+        defineField({ name: 'problem', type: 'string', initialValue: 'The problem' }),
+        defineField({ name: 'whatIDid', type: 'string', title: 'What I did', initialValue: 'What I did' }),
+        defineField({ name: 'impact', type: 'string', title: 'What changed', initialValue: 'What changed' }),
+      ],
+    }),
+    defineField({
       name: 'competencies',
       type: 'array',
       title: 'Technical competencies',

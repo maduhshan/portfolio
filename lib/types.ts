@@ -116,6 +116,8 @@ export type SiteSettings = {
   industries?: string[]
   positioning?: PortableTextBlock[]
   competencies?: Competency[]
+  /** The three headings on a case study page. Editable, with sane defaults. */
+  caseStudyLabels?: { problem?: string; whatIDid?: string; impact?: string }
   availabilityStatus?: AvailabilityStatus
   availabilityDetail?: string
   calendarLink?: string

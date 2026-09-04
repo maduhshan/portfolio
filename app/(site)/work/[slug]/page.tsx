@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 
 import { Plate } from '@/components/Plate'
 import { RichText } from '@/components/RichText'
-import { getProject, getProjectSlugs, getProjects } from '@/lib/content'
+import { getProject, getProjectSlugs, getProjects, getSiteSettings } from '@/lib/content'
 import { excerpt, toPlainText } from '@/lib/portable-text'
 
 export const revalidate = 3600
@@ -39,7 +39,9 @@ export default async function ProjectPage({ params }: PageProps) {
   const project = await getProject(slug)
   if (!project) notFound()
 
-  const all = await getProjects()
+  const [all, settings] = await Promise.all([getProjects(), getSiteSettings()])
+  // Editable at /studio, with the original wording as the fallback.
+  const labels = settings.caseStudyLabels ?? {}
   const ordered = [...all].sort((a, b) => a.order - b.order)
   const index = ordered.findIndex((item) => item.slug === project.slug)
   const next = ordered.length > 1 ? ordered[(index + 1) % ordered.length] : null
@@ -104,13 +106,13 @@ export default async function ProjectPage({ params }: PageProps) {
       ) : null}
 
       <div className="mt-16 space-y-16">
-        <Part title="The problem">
+        <Part title={labels.problem || 'The problem'}>
           <RichText value={project.problem} />
         </Part>
-        <Part title="What I did">
+        <Part title={labels.whatIDid || 'What I did'}>
           <RichText value={project.whatIDid} />
         </Part>
-        <Part title="What changed">
+        <Part title={labels.impact || 'What changed'}>
           <RichText value={project.impact} />
         </Part>
       </div>

@@ -55,6 +55,12 @@ export const seedSettings: SiteSettings = {
   positioning: pt(
     'I have worked in two modes. Embedded with a client organisation as a forward deployed and consulting engineer, inside their team and their codebase. And in house as a product engineer, on systems that have to keep working for years after the project closes.',
   ),
+  // The three headings on every case study page. Editable at /studio.
+  caseStudyLabels: {
+    problem: 'The problem',
+    whatIDid: 'What I did',
+    impact: 'What changed',
+  },
   competencies: [
     {
       area: 'Languages',

@@ -65,6 +65,7 @@ async function seed() {
     industries: seedSettings.industries,
     positioning: seedSettings.positioning,
     competencies: seedSettings.competencies,
+    caseStudyLabels: seedSettings.caseStudyLabels,
     availabilityStatus: seedSettings.availabilityStatus,
     availabilityDetail: seedSettings.availabilityDetail,
     calendarLink: seedSettings.calendarLink,

@@ -11,7 +11,7 @@ const imageFields = groq`
 
 export const siteSettingsQuery = groq`
   *[_type == "siteSettings"][0]{
-    name, headline, bio, stats, industries, positioning, competencies,
+    name, headline, bio, stats, industries, positioning, competencies, caseStudyLabels,
     availabilityStatus, availabilityDetail, calendarLink,
     email, whatsapp, linkedin, github, instagram, mediumHandle,
     pinnedPosts,

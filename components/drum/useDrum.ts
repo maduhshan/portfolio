@@ -52,6 +52,31 @@ const DIRECTION_THRESHOLD = 6
  */
 const REAL_RESIZE = 140
 
+/**
+ * True while a hash navigation is still travelling. Folding a runway during
+ * one would move the destination out from under the browser.
+ */
+let navigating = false
+let navigatingTimer = 0
+if (typeof window !== 'undefined') {
+  const hold = () => {
+    navigating = true
+    window.clearTimeout(navigatingTimer)
+    navigatingTimer = window.setTimeout(() => {
+      navigating = false
+    }, 1400)
+  }
+  window.addEventListener('hashchange', hold)
+  document.addEventListener(
+    'click',
+    (event) => {
+      const link = (event.target as HTMLElement | null)?.closest?.('a[href*="#"]')
+      if (link) hold()
+    },
+    true,
+  )
+}
+
 /** Chrome and Firefox correct for content resizing above the viewport. Safari does not. */
 const ANCHORING = typeof CSS !== 'undefined' && CSS.supports?.('overflow-anchor', 'auto')
 
@@ -92,6 +117,9 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
     let live = false
     let seated = -1
     let collapsed = false
+    /** Which face a folded drum is showing. Scroll cannot drive it any more. */
+    let manual = 0
+    let heading: 'down' | 'up' = 'down'
     /** Last value written per face, so an unchanged frame writes nothing. */
     const painted: number[] = new Array(items.length).fill(-1)
     let lastY = window.scrollY
@@ -134,6 +162,7 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       if (wasOn) runway!.dataset.drum = 'on'
       if (!height) return
       drum!.style.setProperty('--face-h', `${height}px`)
+      runway!.style.setProperty('--face-h', `${height}px`)
       drum!.style.setProperty('--radius', `${height / 2 / Math.tan(halfStep)}px`)
     }
 
@@ -152,6 +181,11 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
      */
     function setCollapsed(next: boolean) {
       if (next === collapsed || !live) return
+      // Folding on the way down would shorten the document underneath an
+      // anchor scroll that is still running, and the browser would never
+      // reach what it was aiming at. Going up is the only direction this
+      // helps anyway.
+      if (next && (heading !== 'up' || navigating)) return
       const box = runway!.getBoundingClientRect()
       const above = box.bottom <= 0
       const below = box.top >= window.innerHeight
@@ -162,8 +196,14 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       // measuring the height instead leaves a few dozen pixels of drift.
       const anchorBefore = box.bottom + window.scrollY
       collapsed = next
-      if (next) runway!.dataset.collapsed = 'true'
-      else delete runway!.dataset.collapsed
+      if (next) {
+        runway!.dataset.collapsed = 'true'
+        // Folded means arriving from below, and the first face is the most
+        // recent one, which is what someone coming back wants to see.
+        manual = 0
+      } else {
+        delete runway!.dataset.collapsed
+      }
       const anchorAfter = runway!.getBoundingClientRect().bottom + window.scrollY
 
       // Shrinking something above the viewport pulls everything below it
@@ -182,6 +222,11 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
     /** Put a given face square to the reader. */
     seekRef.current = (index: number, smooth: boolean) => {
       if (!live) return
+      if (collapsed) {
+        manual = index
+        render()
+        return
+      }
       const box = runway!.getBoundingClientRect()
       const travel = travelOf(box.height)
       if (travel <= 0) return
@@ -201,10 +246,15 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       // Linear scroll would strand the drum between two faces for half its
       // travel. Easing inside each step makes it dwell on a face and turn
       // briskly between them.
-      const raw = progress * (count - 1)
-      const seat = Math.min(Math.floor(raw), count - 2)
-      const within = raw - seat
-      const turned = seat + smoothstep(clamp01((within - DWELL) / (1 - DWELL * 2)))
+      let turned: number
+      if (collapsed) {
+        turned = manual
+      } else {
+        const raw = progress * (count - 1)
+        const seat = Math.min(Math.floor(raw), count - 2)
+        const within = raw - seat
+        turned = seat + smoothstep(clamp01((within - DWELL) / (1 - DWELL * 2)))
+      }
       drum!.style.setProperty('--turn', `${-turned * step}deg`)
 
       for (let i = 0; i < items.length; i++) {
@@ -248,6 +298,7 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       drum!.style.removeProperty('--turn')
       drum!.style.removeProperty('--radius')
       drum!.style.removeProperty('--face-h')
+      runway!.style.removeProperty('--face-h')
       runway!.style.removeProperty('--hold')
     }
 
@@ -341,7 +392,8 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
     function onScroll() {
       const y = window.scrollY
       if (Math.abs(y - lastY) > DIRECTION_THRESHOLD) {
-        setDirection(y > lastY ? 'down' : 'up')
+        heading = y > lastY ? 'down' : 'up'
+        setDirection(heading)
         lastY = y
       }
       if (ticking || !live) return

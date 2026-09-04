@@ -66,6 +66,17 @@ export function SiteNav({
     return () => observer.disconnect()
   }, [pathname])
 
+  // The address follows what you are reading, so a section can be linked to
+  // and a reload comes back to the same place. replaceState rather than a hash
+  // assignment: assigning would scroll the page, and every section passed
+  // would be another entry in the back button.
+  useEffect(() => {
+    if (pathname !== '/' || !active) return
+    const wanted = `#${active}`
+    if (window.location.hash === wanted) return
+    window.history.replaceState(null, '', wanted)
+  }, [active, pathname])
+
   // The bar floats over sections on both grounds, so it takes the ground of
   // whatever is underneath it rather than painting a bar of its own.
   useEffect(() => {

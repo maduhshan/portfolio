@@ -865,14 +865,30 @@
   height: calc(100svh + (var(--faces) - 1) * var(--pitch) + var(--hold, 0px));
 }
 
-/* Read once, so it is one screen on the way back up rather than four. */
+/* Read once, so on the way back up it is one box rather than four screens.
+   Sized to the face rather than the viewport: a full screen of mostly empty
+   paper is still a screen to scroll past. */
 [data-drum='on'][data-collapsed] {
-  height: 100svh;
+  height: calc(var(--face-h, 100svh) + 14vh);
 }
 
-[data-drum='on'][data-collapsed] .drum-step,
-[data-drum='on'][data-collapsed] .drum-skip,
+/* Nothing to pin when there is no travel, so it simply sits in the flow. */
+[data-drum='on'][data-collapsed] .drum-stage {
+  position: static;
+  height: auto;
+  align-content: start;
+  padding-block: 7vh 0;
+}
+
 [data-drum='on'][data-collapsed] .drum-count {
+  position: static;
+  margin-bottom: 1.5rem;
+}
+
+/* The arrows stay: folded, they are the only way to turn the wheel, and
+   someone coming back up may still want a look. The skip button goes, since
+   a folded runway is one screen and there is nothing left to skip. */
+[data-drum='on'][data-collapsed] .drum-skip {
   display: none;
 }
 
@@ -1263,4 +1279,10 @@
   [data-drum='on'] .drum-step {
     right: -1.15rem;
   }
+}
+
+/* A folded drum is turned by hand, so give it the animation the scroll used
+   to provide. */
+[data-drum='on'][data-collapsed] .drum {
+  transition: transform var(--duration-shift) var(--ease-focus);
 }

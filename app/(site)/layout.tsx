@@ -1,3 +1,4 @@
+import { HashLanding } from '@/components/HashLanding'
 import { FocusCursor } from '@/components/cursor/FocusCursor'
 import { PageResolve } from '@/components/PageResolve'
 import { SiteFooter } from '@/components/SiteFooter'
@@ -19,6 +20,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         socials={socialLinks(settings, ['github'])}
       />
       <FocusCursor />
+      <HashLanding />
       <PageResolve>
         <main id="main">{children}</main>
       </PageResolve>

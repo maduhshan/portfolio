@@ -31,6 +31,10 @@ export function SiteNav({
   // Past the first screen the links fold away into a single control, so the
   // bar stops competing with whatever you scrolled down to read.
   const [folded, setFolded] = useState(false)
+  /** Whether the reader opened the page on a hash, read before any effect. */
+  const arrivedOnHash = useRef(typeof window !== 'undefined' && Boolean(window.location.hash))
+  /** Set once the page has genuinely moved away from the top. */
+  const hasLeftTheTop = useRef(false)
   const headerRef = useRef<HTMLElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -73,12 +77,26 @@ export function SiteNav({
   useEffect(() => {
     if (pathname !== '/') return
     const sync = () => {
+      if (window.scrollY > 400) hasLeftTheTop.current = true
+      const nearTop = window.scrollY < 320
+
+      // A page opened at #photography sits at the top for a moment while the
+      // browser scrolls down to it, firing scroll events the whole way.
+      // Clearing then would throw away the address before anything had gone
+      // anywhere. Once the page has actually been down the page, a return to
+      // the top is a real one.
+      if (nearTop && arrivedOnHash.current && !hasLeftTheTop.current) return
+
       // The hero is not a numbered section, so up there the address is just
-      // the page. Anywhere else it names what is being read.
-      const wanted = window.scrollY < 320 || !active ? '' : `#${active}`
-      if (wanted === window.location.hash) return
+      // the page. Below it, it names what is being read. In between — scrolled
+      // down with no section resolved yet — say nothing rather than clearing.
+      const wanted = nearTop ? '' : active ? `#${active}` : null
+      if (wanted === null || wanted === window.location.hash) return
       window.history.replaceState(null, '', wanted || window.location.pathname)
     }
+    // Also run on an active change, not only on scroll: after landing on a
+    // section the observer resolves it with no further scrolling, and the
+    // address would otherwise never catch up.
     sync()
     window.addEventListener('scroll', sync, { passive: true })
     return () => window.removeEventListener('scroll', sync)

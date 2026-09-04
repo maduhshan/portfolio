@@ -74,6 +74,9 @@ if (typeof window !== 'undefined') {
       navigating = false
     }, 1400)
   }
+  // A page opened at a hash scrolls to it without ever firing hashchange, and
+  // folding a runway while that is happening moves the destination.
+  if (window.location.hash) hold()
   window.addEventListener('hashchange', hold)
   document.addEventListener(
     'click',

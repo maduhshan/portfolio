@@ -52,6 +52,9 @@ const DIRECTION_THRESHOLD = 6
  */
 const REAL_RESIZE = 140
 
+/** Chrome and Firefox correct for content resizing above the viewport. Safari does not. */
+const ANCHORING = typeof CSS !== 'undefined' && CSS.supports?.('overflow-anchor', 'auto')
+
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n)
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
@@ -88,6 +91,7 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
     const halfStep = (step / 2) * (Math.PI / 180)
     let live = false
     let seated = -1
+    let collapsed = false
     /** Last value written per face, so an unchanged frame writes nothing. */
     const painted: number[] = new Array(items.length).fill(-1)
     let lastY = window.scrollY
@@ -131,6 +135,48 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       if (!height) return
       drum!.style.setProperty('--face-h', `${height}px`)
       drum!.style.setProperty('--radius', `${height / 2 / Math.tan(halfStep)}px`)
+    }
+
+    /**
+     * Fold the runway away once it has been read.
+     *
+     * Going down, the wheel is worth its four screens of scrolling. Coming
+     * back up, it is the same content again and the height is just a wall to
+     * climb. So once the reader has passed the bottom of the runway it becomes
+     * a single screen, and it goes back to full length if they return above
+     * the top of it, so scrolling down a second time still turns the wheel.
+     *
+     * The height only ever changes while the runway is completely off screen,
+     * and the scroll position is corrected in the same frame, so nothing the
+     * reader is looking at moves.
+     */
+    function setCollapsed(next: boolean) {
+      if (next === collapsed || !live) return
+      const box = runway!.getBoundingClientRect()
+      const above = box.bottom <= 0
+      const below = box.top >= window.innerHeight
+      if (!above && !below) return
+
+      // Anchor on the runway's own bottom edge in document space. That is the
+      // boundary everything below it follows, so matching it is exact —
+      // measuring the height instead leaves a few dozen pixels of drift.
+      const anchorBefore = box.bottom + window.scrollY
+      collapsed = next
+      if (next) runway!.dataset.collapsed = 'true'
+      else delete runway!.dataset.collapsed
+      const anchorAfter = runway!.getBoundingClientRect().bottom + window.scrollY
+
+      // Shrinking something above the viewport pulls everything below it
+      // upwards. Chrome and Firefox already put that right themselves through
+      // scroll anchoring, and correcting it again on top doubles the movement
+      // and throws the reader to the top of the page. Safari has no scroll
+      // anchoring, so there it is on us.
+      if (above && !ANCHORING && anchorAfter !== anchorBefore) {
+        window.scrollTo({
+          top: window.scrollY + (anchorAfter - anchorBefore),
+          behavior: 'instant',
+        })
+      }
     }
 
     /** Put a given face square to the reader. */
@@ -197,6 +243,8 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
         item.removeAttribute('data-front')
       }
       delete runway!.dataset.drum
+      delete runway!.dataset.collapsed
+      collapsed = false
       drum!.style.removeProperty('--turn')
       drum!.style.removeProperty('--radius')
       drum!.style.removeProperty('--face-h')
@@ -255,6 +303,7 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
         !resting &&
         !document.hidden &&
         !reduced.matches &&
+        !collapsed &&
         seated < count - 1
       )
     }
@@ -299,6 +348,9 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       ticking = true
       requestAnimationFrame(() => {
         ticking = false
+        const box = runway!.getBoundingClientRect()
+        if (box.bottom <= 0) setCollapsed(true)
+        else if (box.top >= window.innerHeight) setCollapsed(false)
         render()
       })
     }

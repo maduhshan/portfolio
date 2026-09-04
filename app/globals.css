@@ -865,6 +865,17 @@
   height: calc(100svh + (var(--faces) - 1) * var(--pitch) + var(--hold, 0px));
 }
 
+/* Read once, so it is one screen on the way back up rather than four. */
+[data-drum='on'][data-collapsed] {
+  height: 100svh;
+}
+
+[data-drum='on'][data-collapsed] .drum-step,
+[data-drum='on'][data-collapsed] .drum-skip,
+[data-drum='on'][data-collapsed] .drum-count {
+  display: none;
+}
+
 [data-drum='on'] .drum-stage {
   position: sticky;
   top: 0;

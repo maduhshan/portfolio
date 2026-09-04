@@ -157,9 +157,61 @@ verify it is in [`scripts/README.md`](scripts/README.md).
 
 ## Deploying
 
-Push to GitHub, import the repository in Vercel, add the environment variables,
-deploy. `vercel.json` registers the cron. Then set the webhook URL in Sanity to
-the production domain, and add that domain to Sanity's CORS origins.
+The target is **Vercel**. ISR, on-demand revalidation and cron jobs all work
+natively there, which is most of what this site is. It will run anywhere that
+runs Next, but on Cloud Run or similar you would have to add a shared ISR cache
+handler backed by Redis or Cloud Storage, and that is real work for no gain.
+
+### Once, to set it up
+
+Two things that can only be done once the domain exists:
+
+- **Sanity → API → CORS origins:** add the production domain, with credentials
+  allowed. Without it, `/studio` cannot talk to the dataset.
+- **Sanity → API → Webhooks:** point it at `https://yourdomain.com/api/revalidate`
+  using the settings in the Sanity section above.
+
+### Environment variables
+
+Add these under **Settings → Environment Variables**. Tick Production, Preview
+and Development unless noted.
+
+| Variable | Needed for | Notes |
+|---|---|---|
+| `INSTAGRAM_ACCESS_TOKEN` | the gallery | Server-side only. Never prefix with `NEXT_PUBLIC_`. |
+| `INSTAGRAM_TOKEN_ISSUED_AT` | expiry warnings | `YYYY-MM-DD`. Update it whenever you refresh the token. |
+| `CRON_SECRET` | `/api/ig-refresh`, cache purges | Any long random string. |
+| `NEXT_PUBLIC_SITE_URL` | metadata, sitemap, OG | The production origin. A trailing slash is trimmed for you. Optional on Vercel: `lib/site-url.ts` falls back to `VERCEL_PROJECT_PRODUCTION_URL`, which Vercel injects on its own. Set it anyway when the canonical domain is not the one Vercel considers production. |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` | Studio and content | Once Sanity exists. |
+| `NEXT_PUBLIC_SANITY_DATASET` | Studio and content | `production` |
+| `SANITY_WEBHOOK_SECRET` | `/api/revalidate` | Must match the secret in the Sanity webhook. |
+| `SANITY_API_READ_TOKEN` | drafts only | Optional. Published content is public. |
+
+`SANITY_API_WRITE_TOKEN` is for `npm run seed` on your own machine. **Do not put
+it in Vercel** — nothing at runtime writes to Sanity.
+
+Environment variables are read at build and boot, so **changing one needs a
+redeploy** to take effect. Vercel does not restart a deployment when you edit a
+variable.
+
+### Deploying again
+
+Nothing to run. Vercel watches the repository:
+
+- **push to `main` → production deploy.** That is the whole loop.
+- **any other branch or PR → preview deploy** on its own URL, so you can look at
+  a change before it goes live.
+- A failed build does not replace the live site; the previous deployment stays
+  up.
+
+```bash
+git push origin main      # that's it
+```
+
+**Most changes do not need a deploy at all.** Text, photographs, projects,
+career history and availability all come from Sanity or the feeds at request
+time. Deploy only when the *code* changes. That was the point of building it
+this way.
 
 ## How the pieces fit
 

@@ -2,8 +2,7 @@ import type { MetadataRoute } from 'next'
 
 import { getBlogSlugs } from '@/lib/blog'
 import { getProjectSlugs, getSiteSettings } from '@/lib/content'
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+import { siteUrl } from '@/lib/site-url'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const settings = await getSiteSettings()

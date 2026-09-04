@@ -12,12 +12,11 @@ import { getProjects, getRoles, getSiteSettings } from '@/lib/content'
 import { getFrames, heroFrame } from '@/lib/gallery'
 import { mediumProfileUrl, socialLinks } from '@/lib/links'
 import { excerpt } from '@/lib/portable-text'
+import { siteUrl } from '@/lib/site-url'
 import { getBlogEntries } from '@/lib/blog'
 
 /** ISR backstop. Sanity webhooks revalidate by tag well before this. */
 export const revalidate = 3600
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings()

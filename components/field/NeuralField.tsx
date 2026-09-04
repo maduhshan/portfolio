@@ -357,7 +357,17 @@ export function NeuralField() {
     }
 
     let resizeTimer = 0
+    let lastWidth = window.innerWidth
+    let lastHeight = window.innerHeight
     function onResize() {
+      // Rebuilding means re-deriving every node and its adjacency. A mobile
+      // URL bar sliding fires resize continuously through a scroll, and doing
+      // that work each time is most of what makes the page feel stuck.
+      const widthChanged = window.innerWidth !== lastWidth
+      const heightChanged = Math.abs(window.innerHeight - lastHeight) > 140
+      if (!widthChanged && !heightChanged) return
+      lastWidth = window.innerWidth
+      lastHeight = window.innerHeight
       window.clearTimeout(resizeTimer)
       resizeTimer = window.setTimeout(() => {
         bolts = []

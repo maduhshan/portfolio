@@ -831,6 +831,9 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* Its own compositor layer. A full-screen fixed canvas that never changes
+     during a scroll should be composited, not repainted with the page. */
+  transform: translateZ(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -856,7 +859,10 @@
 
 [data-drum='on'] {
   position: relative;
-  height: calc(100dvh + (var(--faces) - 1) * var(--pitch) + var(--hold, 0px));
+  /* svh, not dvh: the dynamic unit changes as the mobile URL bar slides in
+     and out during a scroll, which would resize the runway mid-gesture and
+     make the whole wheel jump. The small unit is stable. */
+  height: calc(100svh + (var(--faces) - 1) * var(--pitch) + var(--hold, 0px));
 }
 
 [data-drum='on'] .drum-stage {
@@ -864,7 +870,7 @@
   top: 0;
   display: grid;
   align-content: center;
-  height: 100dvh;
+  height: 100svh;
   /* Sits above centre. Any higher and the face arriving from above clips
      under the navigation. */
   padding-bottom: 9vh;
@@ -972,6 +978,18 @@
   .drum-face__inner {
     padding-right: 3.5rem;
   }
+
+  /* Half the slab and no blurred cast. Nine hard offsets plus a soft shadow
+     is a lot of repainting for a phone to do on every scroll frame. */
+  [data-drum='on'] .drum-face[data-front],
+  [data-drum='on'] .drum-face[data-front]:hover,
+  [data-drum='on'] .drum-face[data-front]:focus-within {
+    box-shadow:
+      3px 3px 0 0 var(--color-hide),
+      6px 6px 0 0 var(--color-hide),
+      9px 9px 0 0 var(--color-hide);
+    translate: none;
+  }
 }
 
 @media (min-width: 768px) {
@@ -1004,8 +1022,25 @@
    and fills as its role comes round on the drum, and the marker rides down
    to meet it. The global reduced-motion rule flattens all of it.
    ──────────────────────────────────────────────────────────────────────── */
+/* Everything on the rail hangs off one axis position, so the rail can be a
+   narrow strip on a phone and the full labelled axis from md up. */
+.career-rail {
+  --rail-x: 0.55rem;
+}
+
+@media (min-width: 768px) {
+  .career-rail {
+    --rail-x: 2.5rem;
+  }
+}
+
+.career-axis,
+.career-tick {
+  left: var(--rail-x);
+}
+
 .career-band {
-  left: 2.3rem;
+  left: calc(var(--rail-x) - 0.19rem);
   width: 0.375rem;
   background-color: color-mix(in oklab, var(--fg) 20%, transparent);
   transition:
@@ -1015,14 +1050,14 @@
 }
 
 .career-band[data-active] {
-  left: 2.1rem;
+  left: calc(var(--rail-x) - 0.375rem);
   width: 0.75rem;
   background-color: var(--fg);
 }
 
 /* A hairline crossing the axis at the middle of the role being read. */
 .career-marker {
-  left: 1.7rem;
+  left: calc(var(--rail-x) - 0.85rem);
   width: 1.7rem;
   height: 1px;
   background-color: var(--fg);

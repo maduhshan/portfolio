@@ -21,10 +21,13 @@ import type { ProjectSummary } from '@/lib/types'
 /** How much scrolling advances one face. */
 const PITCH_VH = 42
 
+/** How long a project holds before the wheel turns on its own. */
+const AUTO_MS = 5000
+
 export function Work({ projects }: { projects: ProjectSummary[] }) {
   const ordered = [...projects].sort((a, b) => a.order - b.order)
   const faces = ordered.length
-  const { runwayRef, drumRef, front, direction, seek } = useDrum(faces)
+  const { runwayRef, drumRef, front, direction, seek } = useDrum(faces, { autoMs: AUTO_MS })
 
   return (
     <div

@@ -6,7 +6,7 @@ import { OpenCue } from '@/components/OpenCue'
 import { DrumSkip } from '@/components/drum/DrumSkip'
 import { DrumStep } from '@/components/drum/DrumStep'
 import { useDrum } from '@/components/drum/useDrum'
-import { formatRange, monthDiff, monthsBetween, yearOf } from '@/lib/format'
+import { formatRange, monthDiff, yearOf } from '@/lib/format'
 import type { Role } from '@/lib/types'
 
 /**
@@ -29,9 +29,19 @@ import type { Role } from '@/lib/types'
 /** How much scrolling advances one role. */
 const PITCH_VH = 46
 
+/** How long a role holds before the wheel turns on its own. */
+const AUTO_MS = 5000
+
 export function Career({ roles }: { roles: Role[] }) {
   const ordered = [...roles].sort((a, b) => a.order - b.order)
-  const { runwayRef, drumRef, front, live, direction, seek } = useDrum(ordered.length)
+  // Six roles means a 60 degree step, against eight projects at 45, so a
+  // career neighbour tilts away harder and the same opacity reads dimmer.
+  // The higher falloff evens that out and leaves the next role legible enough
+  // to be worth turning to.
+  const { runwayRef, drumRef, front, live, direction, seek } = useDrum(ordered.length, {
+    falloff: 1.9,
+    autoMs: AUTO_MS,
+  })
   const [scrolledTo, setScrolledTo] = useState(0)
   const active = live ? front : scrolledTo
 
@@ -45,11 +55,6 @@ export function Career({ roles }: { roles: Role[] }) {
   const firstYear = yearOf(earliest)
   const axisStart = `${firstYear}-01-01`
   const totalMonths = Math.max(monthDiff(axisStart, null), 1)
-  const longest = ordered.reduce(
-    (max, role) => Math.max(max, monthsBetween(role.startDate, role.endDate)),
-    1,
-  )
-
   const position = (iso: string | null) => monthDiff(axisStart, iso)
 
   const bands = ordered.map((role) => {
@@ -97,20 +102,22 @@ export function Career({ roles }: { roles: Role[] }) {
   const marker = bands[active]
 
   return (
-    <div className="grid gap-x-8 md:grid-cols-[5rem_1fr]">
-      <div className="hidden md:block" aria-hidden>
+    <div className="career grid grid-cols-[1.6rem_1fr] gap-x-3 md:grid-cols-[5rem_1fr] md:gap-x-8">
+      <div className="career-rail" aria-hidden>
         <div className="sticky top-32 h-[62vh]">
           <div className="relative h-full">
-            <span className="bg-rule absolute top-0 bottom-0 left-10 w-px" />
+            <span className="career-axis bg-rule absolute top-0 bottom-0 w-px" />
             {ticks.map((tick) => (
               <span
                 key={tick.year}
-                className="absolute left-10 flex items-center gap-2"
+                className="career-tick absolute flex items-center gap-2"
                 style={{ top: `${tick.top}%` }}
               >
                 <span className="bg-rule-strong block h-px w-1.5" />
                 {tick.labelled ? (
-                  <span className="label -translate-y-1/2 leading-none">{tick.year}</span>
+                  <span className="label hidden -translate-y-1/2 leading-none md:inline">
+                    {tick.year}
+                  </span>
                 ) : null}
               </span>
             ))}
@@ -161,7 +168,6 @@ export function Career({ roles }: { roles: Role[] }) {
 
           <ol ref={drumRef} className="drum">
             {ordered.map((role, index) => {
-              const months = monthsBetween(role.startDate, role.endDate)
               const current = role.endDate === null
 
               return (
@@ -195,16 +201,6 @@ export function Career({ roles }: { roles: Role[] }) {
                       <span className={current ? 'text-body' : 'text-small'}>{role.title}</span>
                       <span className="meta">{role.location}</span>
                     </p>
-
-                    {/* On narrow screens the rail collapses into this: the same
-                        scale, drawn per row. */}
-                    <span
-                      aria-hidden
-                      className="bg-rule-strong mt-4 block h-px md:hidden"
-                      style={{
-                        width: `${Math.max((months / longest) * 100, 6)}%`,
-                      }}
-                    />
 
                     {role.summary ? (
                       <p

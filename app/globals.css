@@ -1294,5 +1294,5 @@
    captions. One variable covers .label, .meta and .text-muted alike.
    ──────────────────────────────────────────────────────────────────────── */
 .drum-face {
-  --fg-muted: color-mix(in oklab, var(--color-ink) 45%, var(--color-graphite));
+  --fg-muted: color-mix(in oklab, var(--color-ink) 72%, var(--color-graphite));
 }

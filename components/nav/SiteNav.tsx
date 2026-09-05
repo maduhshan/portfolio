@@ -121,9 +121,7 @@ export function SiteNav({
       raf = 0
       setFolded(window.scrollY > 140)
       const x = Math.round(window.innerWidth / 2)
-      const beneath = document
-        .elementsFromPoint(x, 30)
-        .find((element) => !header.contains(element))
+      const beneath = document.elementsFromPoint(x, 30).find((element) => !header.contains(element))
       const ground = beneath?.closest('[data-ground]')?.getAttribute('data-ground')
       header.dataset.ground = ground === 'hide' ? 'hide' : 'paper'
     }
@@ -205,15 +203,22 @@ export function SiteNav({
       <div className="shell flex items-center justify-between py-4">
         {/* A nameplate, not a status badge: one chip, a hairline, and the
             availability set at label size beside the name. */}
-        <div className="bg-ground flex items-center gap-3 px-2 py-1">
+        {/* Nothing in here wraps. A name broken across two lines is wrong at any
+            width, and the availability line reads as two stray words when it
+            folds. There is room for all of it beside a six-item bar; the flex
+            row simply had to be told to hold its size rather than fold text. */}
+        <div className="bg-ground flex items-center gap-3 px-2 py-1 whitespace-nowrap">
           <Link href="/#top" data-magnetic className="meta text-fg nav-item">
             {name}
             <span className="sr-only"> — home</span>
           </Link>
+          {/* Shown only where it fits. The shell caps at 1312px, and the
+              availability line beside a six-item bar clears that from about
+              1320 up; below it the bar gets pushed off the right edge. */}
           {availability ? (
             <>
-              <span aria-hidden className="bg-rule-strong hidden h-3 w-px lg:block" />
-              <span className="label hidden items-center gap-1.5 lg:flex">
+              <span aria-hidden className="bg-rule-strong hidden h-3 w-px min-[1360px]:block" />
+              <span className="label hidden items-center gap-1.5 min-[1360px]:flex">
                 <span aria-hidden className="rounded-dot size-[5px] bg-current" />
                 {availability}
               </span>
@@ -252,23 +257,25 @@ export function SiteNav({
 
         <nav
           aria-label="Sections"
-          className="nav-links hidden md:block"
+          className="nav-links hidden lg:block"
           data-folded={folded ? 'true' : undefined}
         >
           <ul className="bg-ground flex items-center gap-6 px-3 py-1.5">
-            {listed.filter((item) => item.inBar !== false).map((item) => (
-              <li key={item.id}>
-                <Link
-                  href={item.href}
-                  data-magnetic
-                  className="nav-item meta"
-                  data-active={active === item.id ? 'true' : undefined}
-                  aria-current={active === item.id ? 'true' : undefined}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+            {listed
+              .filter((item) => item.inBar !== false)
+              .map((item) => (
+                <li key={item.id}>
+                  <Link
+                    href={item.href}
+                    data-magnetic
+                    className="nav-item meta"
+                    data-active={active === item.id ? 'true' : undefined}
+                    aria-current={active === item.id ? 'true' : undefined}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
           </ul>
         </nav>
 
@@ -317,7 +324,6 @@ export function SiteNav({
           </ul>
         </nav>
       </dialog>
-
     </header>
   )
 }

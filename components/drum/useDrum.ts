@@ -69,16 +69,23 @@ const REAL_RESIZE = 140
 /**
  * How long the arrows take to turn one face.
  *
- * The browser's own smooth scroll runs at a fixed pace whatever the distance,
- * which on a drum reads as a snap: the wheel is through the turn before the eye
- * has followed it, and the point of turning by hand is to look at what arrives.
- * Close to the pace the scroll-driven turn has, so it behaves like one wheel
- * however it is being driven.
+ * Nearly all of it is the turn itself. A step is mostly dwell, so a seek that
+ * spread its time evenly across the scroll would spend two thirds of it on a
+ * wheel standing still and flick through the part worth watching. See LEAD.
  */
-const SEEK_MS = 620
+const SEEK_MS = 1150
 
 /** Ceiling for a seek across several faces, so a long jump does not drag. */
-const SEEK_MAX_MS = 1400
+const SEEK_MAX_MS = 2400
+
+/**
+ * Share of a seek spent crossing the parked ends of a step, split between the
+ * two of them. There is nothing to see in those stretches: the wheel is square
+ * to the reader and holding, and only the scroll position is moving, which the
+ * sticky stage hides. So they are got out of the way, and what is left, better
+ * than four fifths of the time, is the rotation.
+ */
+const LEAD = 0.05
 
 /**
  * True while a hash navigation is still travelling. Folding a runway during
@@ -110,6 +117,21 @@ if (typeof window !== 'undefined') {
 
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n)
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
+
+/**
+ * Where a seek should be, as a share of its distance, at a given share of its
+ * time. `dwell` is how much of that distance is parked at each end.
+ *
+ * Linear in the middle on purpose: the rotation already has smoothstep applied
+ * to it as the scroll passes through, so an eased time curve on top of that
+ * would ease it twice and the turn would crawl at both ends and lurch through
+ * the middle.
+ */
+function paced(t: number, dwell: number) {
+  if (t < LEAD) return (t / LEAD) * dwell
+  if (t > 1 - LEAD) return 1 - dwell + ((t - (1 - LEAD)) / LEAD) * dwell
+  return dwell + ((t - LEAD) / (1 - 2 * LEAD)) * (1 - 2 * dwell)
+}
 
 /** The height must land before paint or the section jumps under a mid-page reload. */
 const useBeforePaint = typeof window === 'undefined' ? useEffect : useLayoutEffect
@@ -287,7 +309,7 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
      * Every frame writes an instant scroll, so this is never fighting a native
      * smooth scroll still in flight.
      */
-    function glide(top: number, ms: number) {
+    function glide(top: number, ms: number, dwell: number) {
       stopGlide()
       const from = window.scrollY
       const distance = top - from
@@ -295,7 +317,7 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       const started = performance.now()
       const frame = (now: number) => {
         const t = clamp01((now - started) / ms)
-        window.scrollTo({ top: from + distance * smoothstep(t), behavior: 'instant' })
+        window.scrollTo({ top: from + distance * paced(t, dwell), behavior: 'instant' })
         glideFrame = t < 1 ? requestAnimationFrame(frame) : 0
       }
       glideFrame = requestAnimationFrame(frame)
@@ -321,7 +343,9 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       // Crossing several faces should take longer than crossing one, but not
       // proportionally longer, or the way back to the first face is a journey.
       const faces = Math.max(1, Math.abs(index - seated))
-      glide(wanted, Math.min(SEEK_MS * Math.sqrt(faces), SEEK_MAX_MS))
+      // Crossing several faces has the same two parked ends as crossing one, so
+      // their share of the whole shrinks as the journey grows.
+      glide(wanted, Math.min(SEEK_MS * Math.sqrt(faces), SEEK_MAX_MS), DWELL / faces)
     }
 
     function render() {

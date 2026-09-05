@@ -15,6 +15,6 @@ export const navItems: NavItem[] = [
   { id: 'work', label: 'Work', href: '/#work' },
   { id: 'photography', label: 'Photography', href: '/#photography' },
   { id: 'blog', label: 'Blog', href: '/#blog' },
-  { id: 'recommendations', label: 'What people say', href: '/#recommendations', inBar: false },
+  { id: 'recommendations', label: 'Recommendations', href: '/#recommendations' },
   { id: 'contact', label: 'Contact', href: '/#contact' },
 ]

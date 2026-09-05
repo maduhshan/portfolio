@@ -768,11 +768,14 @@
     visibility: hidden;
   }
 
-  /* Always present on a narrow screen; on a wide one only once folded. */
+  /* Always present on a narrow screen; on a wide one only once folded.
+     The threshold is where a six-item bar actually fits beside the nameplate
+     and the socials. Below it the bar clips its last item, so down there the
+     menu is the navigation rather than a fallback for it. */
   .nav-toggle {
     display: inline-flex;
   }
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .nav-toggle {
       display: none;
     }
@@ -1331,10 +1334,12 @@
 }
 
 /* A folded drum is turned by hand, so give it the animation the scroll used to
-   provide. The duration matches SEEK_MS in useDrum, which paces the same turn
-   when the runway is open: one wheel, one speed, whichever is driving it. */
+   provide. There is no dwell to cross here, so this is SEEK_MS less the parked
+   ends: the same turn, at the same speed, as when the runway is open. The curve
+   is an ease-in-out rather than --ease-focus, because it is standing in for the
+   smoothstep the scroll applies, and --ease-focus front-loads. */
 [data-drum='on'][data-collapsed] .drum {
-  transition: transform 620ms var(--ease-focus);
+  transition: transform 1035ms cubic-bezier(0.45, 0, 0.55, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {

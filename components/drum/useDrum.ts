@@ -14,8 +14,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
  * the breakpoint, so what remains is the plain list it started as.
  */
 
-/** Share of each step spent parked on a face rather than turning. */
-const DWELL = 0.32
+/**
+ * Share of each step spent parked on a face rather than turning. Two of these
+ * per face, one at the end of its own step and one at the start of the next,
+ * so what is left over — 1 - 2 * DWELL — is the window the rotation itself has
+ * to run in. Raising this parks longer but spins harder, which is the thing
+ * that makes a wheel feel like it is getting away from you.
+ */
+const DWELL = 0.3
 
 /**
  * How far either side of the front face stays lit. Above 1 the neighbours are
@@ -59,6 +65,20 @@ const DIRECTION_THRESHOLD = 6
  * real layout change worth re-measuring for.
  */
 const REAL_RESIZE = 140
+
+/**
+ * How long the arrows take to turn one face.
+ *
+ * The browser's own smooth scroll runs at a fixed pace whatever the distance,
+ * which on a drum reads as a snap: the wheel is through the turn before the eye
+ * has followed it, and the point of turning by hand is to look at what arrives.
+ * Close to the pace the scroll-driven turn has, so it behaves like one wheel
+ * however it is being driven.
+ */
+const SEEK_MS = 620
+
+/** Ceiling for a seek across several faces, so a long jump does not drag. */
+const SEEK_MAX_MS = 1400
 
 /**
  * True while a hash navigation is still travelling. Folding a runway during
@@ -192,6 +212,9 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
      */
     function setCollapsed(next: boolean) {
       if (next === collapsed || !live) return
+      // Folding moves everything below the runway. A glide still aiming at the
+      // old geometry would land somewhere meaningless, so it ends here.
+      stopGlide()
       // Folding on the way down would shorten the document underneath an
       // anchor scroll that is still running, and the browser would never
       // reach what it was aiming at. Going up is the only direction this
@@ -251,6 +274,33 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       })
     }
 
+    let glideFrame = 0
+
+    function stopGlide() {
+      if (!glideFrame) return
+      cancelAnimationFrame(glideFrame)
+      glideFrame = 0
+    }
+
+    /**
+     * Scroll to a position over a set time rather than at the browser's pace.
+     * Every frame writes an instant scroll, so this is never fighting a native
+     * smooth scroll still in flight.
+     */
+    function glide(top: number, ms: number) {
+      stopGlide()
+      const from = window.scrollY
+      const distance = top - from
+      if (Math.abs(distance) < 1) return
+      const started = performance.now()
+      const frame = (now: number) => {
+        const t = clamp01((now - started) / ms)
+        window.scrollTo({ top: from + distance * smoothstep(t), behavior: 'instant' })
+        glideFrame = t < 1 ? requestAnimationFrame(frame) : 0
+      }
+      glideFrame = requestAnimationFrame(frame)
+    }
+
     /** Put a given face square to the reader. */
     seekRef.current = (index: number, smooth: boolean) => {
       if (!live) return
@@ -263,10 +313,15 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       const travel = travelOf(box.height)
       if (travel <= 0) return
       const wanted = box.top + window.scrollY + clamp01(index / (count - 1)) * travel
-      window.scrollTo({
-        top: wanted,
-        behavior: smooth && !reduced.matches ? 'smooth' : 'instant',
-      })
+      if (!smooth || reduced.matches) {
+        stopGlide()
+        window.scrollTo({ top: wanted, behavior: 'instant' })
+        return
+      }
+      // Crossing several faces should take longer than crossing one, but not
+      // proportionally longer, or the way back to the first face is a journey.
+      const faces = Math.max(1, Math.abs(index - seated))
+      glide(wanted, Math.min(SEEK_MS * Math.sqrt(faces), SEEK_MAX_MS))
     }
 
     function render() {
@@ -409,6 +464,19 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
       autoTimer = 0
     }
 
+    /**
+     * Real input wins. The wheel stops where it is rather than completing a
+     * turn against a finger or a scroll wheel, and nothing starts itself again.
+     *
+     * The arrows are safe from this: pointerdown lands before the click that
+     * starts the glide, so a second press cancels the first turn and begins its
+     * own rather than cancelling itself.
+     */
+    function surrenderToUser() {
+      stopAuto()
+      stopGlide()
+    }
+
     function onRest() {
       resting = true
       window.clearTimeout(autoTimer)
@@ -470,7 +538,7 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
 
     evaluate()
     scheduleAuto()
-    for (const name of surrender) window.addEventListener(name, stopAuto, { passive: true })
+    for (const name of surrender) window.addEventListener(name, surrenderToUser, { passive: true })
     stage?.addEventListener('pointerenter', onRest)
     stage?.addEventListener('pointerleave', onLeave)
     document.addEventListener('visibilitychange', scheduleAuto)
@@ -482,7 +550,8 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
     return () => {
       window.clearTimeout(autoTimer)
       watcher?.disconnect()
-      for (const name of surrender) window.removeEventListener(name, stopAuto)
+      stopGlide()
+      for (const name of surrender) window.removeEventListener(name, surrenderToUser)
       stage?.removeEventListener('pointerenter', onRest)
       stage?.removeEventListener('pointerleave', onLeave)
       document.removeEventListener('visibilitychange', scheduleAuto)

@@ -18,11 +18,13 @@ import type { ProjectSummary } from '@/lib/types'
  * is the plain ordered index it has always been.
  */
 
-/** How much scrolling advances one face. */
-const PITCH_VH = 42
+/** How much scrolling advances one face. Deliberately more than a single
+ *  trackpad flick: a project should have to be scrolled past, not brushed. */
+const PITCH_VH = 54
 
-/** How long a project holds before the wheel turns on its own. */
-const AUTO_MS = 5000
+/** How long a project holds before the wheel turns on its own. Long enough to
+ *  read a title, an organisation and a stack without being moved on. */
+const AUTO_MS = 7500
 
 export function Work({ projects }: { projects: ProjectSummary[] }) {
   const ordered = [...projects].sort((a, b) => a.order - b.order)

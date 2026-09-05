@@ -17,7 +17,7 @@ type WebhookBody = {
   slug?: { current?: string }
 }
 
-const KNOWN_TYPES = new Set(['siteSettings', 'role', 'project', 'post', 'photo'])
+const KNOWN_TYPES = new Set(['siteSettings', 'role', 'project', 'post', 'photo', 'recommendation'])
 
 /** Feeds that are cached for a long time and occasionally need a nudge. */
 const PURGEABLE_TAGS = new Set(['instagram', 'medium'])

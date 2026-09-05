@@ -19,12 +19,16 @@ export function SiteNav({
   name,
   availability,
   socials = [],
+  omit = [],
 }: {
   name: string
   /** Already resolved: undefined means do not show an indicator at all. */
   availability?: string
   socials?: ExternalLink[]
+  /** Sections that are not on the page, so the menu does not link into thin air. */
+  omit?: string[]
 }) {
+  const listed = navItems.filter((item) => !omit.includes(item.id))
   const pathname = usePathname()
   const [active, setActive] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
@@ -52,7 +56,7 @@ export function SiteNav({
       return
     }
 
-    const sections = navItems
+    const sections = listed
       .map((item) => document.getElementById(item.id))
       .filter((el): el is HTMLElement => el !== null)
     if (sections.length === 0) return
@@ -252,7 +256,7 @@ export function SiteNav({
           data-folded={folded ? 'true' : undefined}
         >
           <ul className="bg-ground flex items-center gap-6 px-3 py-1.5">
-            {navItems.map((item) => (
+            {listed.filter((item) => item.inBar !== false).map((item) => (
               <li key={item.id}>
                 <Link
                   href={item.href}
@@ -296,7 +300,7 @@ export function SiteNav({
       >
         <nav data-ground="paper" aria-label="Sections" className="relative">
           <ul>
-            {navItems.map((item, index) => (
+            {listed.map((item, index) => (
               <li key={item.id} className="border-rule border-b last:border-b-0">
                 <Link
                   href={item.href}

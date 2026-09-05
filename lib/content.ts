@@ -1,4 +1,11 @@
-import { seedPhotos, seedPosts, seedProjects, seedRoles, seedSettings } from '@/content/seed'
+import {
+  seedPhotos,
+  seedPosts,
+  seedProjects,
+  seedRecommendations,
+  seedRoles,
+  seedSettings,
+} from '@/content/seed'
 
 import { sanityFetch } from './sanity/client'
 import {
@@ -8,10 +15,19 @@ import {
   projectBySlugQuery,
   projectSlugsQuery,
   projectsQuery,
+  recommendationsQuery,
   rolesQuery,
   siteSettingsQuery,
 } from './sanity/queries'
-import type { Photo, Post, Project, ProjectSummary, Role, SiteSettings } from './types'
+import type {
+  Photo,
+  Post,
+  Project,
+  ProjectSummary,
+  Recommendation,
+  Role,
+  SiteSettings,
+} from './types'
 
 /**
  * The one place the site reads content from.
@@ -75,4 +91,12 @@ export async function getPost(slug: string): Promise<Post | null> {
 export async function getPhotos(): Promise<Photo[]> {
   const docs = await sanityFetch<Photo[]>({ query: photosQuery, tags: ['photo'] })
   return docs?.length ? docs : seedPhotos
+}
+
+export async function getRecommendations(): Promise<Recommendation[]> {
+  const docs = await sanityFetch<Recommendation[]>({
+    query: recommendationsQuery,
+    tags: ['recommendation'],
+  })
+  return docs?.length ? docs : seedRecommendations
 }

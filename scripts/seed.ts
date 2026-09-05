@@ -15,6 +15,7 @@ import { config } from 'dotenv'
 
 import { seedPhotos } from '../content/seed/photos'
 import { seedPosts } from '../content/seed/posts'
+import { seedRecommendations } from '../content/seed/recommendations'
 import { seedProjects } from '../content/seed/projects'
 import { seedRoles } from '../content/seed/roles'
 import { seedSettings } from '../content/seed/settings'
@@ -140,12 +141,28 @@ async function seed() {
     })
   }
 
+  for (const said of seedRecommendations) {
+    transaction.createOrReplace({
+      _id: said._id,
+      _type: 'recommendation',
+      name: said.name,
+      role: said.role,
+      company: said.company,
+      relationship: said.relationship,
+      body: said.body,
+      receivedOn: said.receivedOn,
+      profileUrl: said.profileUrl,
+      order: said.order,
+    })
+  }
+
   await transaction.commit()
 
   console.log(
-    `Seeded ${dataset}: 1 siteSettings, ${seedRoles.length} roles, ${seedProjects.length} projects, ${seedPosts.length} posts, ${seedPhotos.length} photographs.`,
+    `Seeded ${dataset}: 1 siteSettings, ${seedRoles.length} roles, ${seedProjects.length} projects, ${seedPosts.length} posts, ${seedPhotos.length} photographs, ${seedRecommendations.length} recommendations.`,
   )
   console.log('Photographs still need uploading by hand at /studio — they are the one thing that cannot be seeded.')
+  console.log('Recommendations too: LinkedIn has no API for them, so copy them into /studio yourself.')
 }
 
 seed().catch((error) => {

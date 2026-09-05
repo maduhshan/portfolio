@@ -31,8 +31,16 @@ export async function sanityFetch<T>({
   revalidate = 3600,
 }: FetchArgs): Promise<T | null> {
   if (!client) return null
+
+  // In development there is no webhook: Sanity cannot reach localhost, so
+  // nothing ever invalidates these tags.
+  const caching =
+    process.env.NODE_ENV === 'development'
+      ? { cache: 'no-store' as const }
+      : { next: { revalidate, tags } }
+
   try {
-    return await client.fetch<T>(query, params, { next: { revalidate, tags } })
+    return await client.fetch<T>(query, params, caching)
   } catch (error) {
     console.warn(`[sanity] query failed for tags ${tags.join(', ')}:`, error)
     return null

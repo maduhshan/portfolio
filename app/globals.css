@@ -1330,10 +1330,17 @@
   }
 }
 
-/* A folded drum is turned by hand, so give it the animation the scroll used
-   to provide. */
+/* A folded drum is turned by hand, so give it the animation the scroll used to
+   provide. The duration matches SEEK_MS in useDrum, which paces the same turn
+   when the runway is open: one wheel, one speed, whichever is driving it. */
 [data-drum='on'][data-collapsed] .drum {
-  transition: transform var(--duration-shift) var(--ease-focus);
+  transition: transform 620ms var(--ease-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-drum='on'][data-collapsed] .drum {
+    transition: none;
+  }
 }
 
 /* ── Reading inside a turning box ────────────────────────────────────────
@@ -1391,5 +1398,286 @@
   .career-year {
     font-size: 0.5625rem;
     letter-spacing: 0.01em;
+  }
+}
+
+/* ── What people say ─────────────────────────────────────────────────────
+   Laid out the way LinkedIn lays them out, because that is where they were
+   written: who said it, what they did, then the date and how they knew you,
+   then the words. Every quote sits in the track at once, so the panel takes
+   the height of the longest and nothing jumps between them.
+   ──────────────────────────────────────────────────────────────────────── */
+.says-window {
+  overflow: hidden;
+}
+
+.says-track {
+  display: flex;
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transform: translateX(calc(var(--at, 0) * -100%));
+  transition: transform var(--duration-shift) var(--ease-focus);
+}
+
+.says-item {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.says-card {
+  margin: 0;
+  max-width: 54ch;
+}
+
+.says-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 1.5rem;
+}
+
+.says-name {
+  font-size: var(--text-t3);
+  line-height: 1.2;
+}
+
+.says-role {
+  font-size: var(--text-small);
+  color: var(--fg-muted);
+}
+
+/* The line that says how they knew you. It is what gives the words their
+   weight, so it is set apart from the rest of the attribution. */
+.says-line {
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+.says-body,
+.says-full {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  text-wrap: pretty;
+}
+
+/* Clamped, with the ellipsis a reader expects. Which ones are actually
+   clamped is measured after layout rather than guessed from a length. */
+.says-body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--lines, 7);
+  line-clamp: var(--lines, 7);
+  overflow: hidden;
+}
+
+.says-more {
+  margin-top: 0.85rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  color: var(--fg-muted);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--rule-strong);
+  transition:
+    color var(--duration-pull) var(--ease-focus),
+    text-decoration-color var(--duration-pull) var(--ease-focus);
+}
+
+.says-more:hover,
+.says-more:focus-visible {
+  color: var(--fg);
+  text-decoration-color: currentColor;
+}
+
+.says-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2.75rem;
+}
+
+.says-pages {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.says-page {
+  display: block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+  background-color: transparent;
+  transition:
+    background-color var(--duration-pull) var(--ease-focus),
+    border-color var(--duration-pull) var(--ease-focus);
+}
+
+.says-page:hover {
+  border-color: var(--fg);
+}
+
+.says-page[aria-current] {
+  background-color: var(--fg);
+  border-color: var(--fg);
+}
+
+.says-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.says-lede {
+  margin-bottom: 2.25rem;
+}
+
+/* ── A recommendation in full ────────────────────────────────────────────
+   Escape and a click outside both close it, which the browser and one
+   handler give between them.
+   ──────────────────────────────────────────────────────────────────────── */
+.says-dialog {
+  width: min(44rem, calc(100vw - 2rem));
+  max-height: min(82vh, 46rem);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-plate);
+  background-color: var(--ground);
+  color: var(--fg);
+
+  /* Shut, and the shape the closing run returns to. `display` and `overlay`
+     are transitioned as discrete properties, which is the whole trick: it is
+     what keeps the dialog in the top layer long enough for the last frames of
+     the fade to be seen instead of being cut off. */
+  opacity: 0;
+  transition:
+    opacity var(--duration-pull) var(--ease-focus),
+    display var(--duration-pull) allow-discrete,
+    overlay var(--duration-pull) allow-discrete;
+}
+
+/* Arriving takes its time, leaving gets out of the way, so the durations
+   differ. Two declarations rather than one: the list on the base rule above is
+   what runs when [open] comes off.
+
+   Only opacity moves on the dialog itself. A transform here would make it a
+   containing block, and the cursor reticle is moved inside the open dialog to
+   reach the top layer, so it would then position against this panel rather
+   than the viewport. The panel is a sibling of the reticle and can move. */
+.says-dialog[open] {
+  opacity: 1;
+  transition:
+    opacity var(--duration-shift) var(--ease-focus),
+    display var(--duration-shift) allow-discrete,
+    overlay var(--duration-shift) allow-discrete;
+}
+
+@starting-style {
+  .says-dialog[open] {
+    opacity: 0;
+  }
+}
+
+/* The blur belongs on the backdrop, never on the dialog, for the same reason:
+   a filter there is a containing block too. */
+.says-dialog::backdrop {
+  background-color: color-mix(in oklab, #0b0d0c 64%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition:
+    opacity var(--duration-pull) var(--ease-focus),
+    display var(--duration-pull) allow-discrete,
+    overlay var(--duration-pull) allow-discrete;
+}
+
+.says-dialog[open]::backdrop {
+  opacity: 1;
+  transition:
+    opacity var(--duration-shift) var(--ease-focus),
+    display var(--duration-shift) allow-discrete,
+    overlay var(--duration-shift) allow-discrete;
+}
+
+@starting-style {
+  .says-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.says-dialog__panel {
+  max-height: min(82vh, 46rem);
+  overflow-y: auto;
+  padding: 2.25rem;
+  transition: transform var(--duration-shift) var(--ease-focus);
+}
+
+/* The panel is left mounted between openings so the closing fade has something
+   to fade. Starting style still applies each time, because the subtree goes
+   from not rendered to rendered every time the dialog opens. */
+@starting-style {
+  .says-dialog[open] .says-dialog__panel {
+    transform: translateY(0.75rem) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .says-dialog,
+  .says-dialog[open],
+  .says-dialog::backdrop,
+  .says-dialog[open]::backdrop,
+  .says-dialog__panel {
+    transition: none;
+  }
+}
+
+/* Clear of the close button. */
+.says-dialog__panel .says-head {
+  padding-right: 3rem;
+}
+
+.says-dialog .says-card {
+  max-width: none;
+}
+
+.says-close {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+  color: var(--fg-muted);
+  background-color: var(--ground);
+  transition:
+    color var(--duration-pull) var(--ease-focus),
+    border-color var(--duration-pull) var(--ease-focus),
+    background-color var(--duration-pull) var(--ease-focus);
+}
+
+.says-close:hover,
+.says-close:focus-visible {
+  color: var(--ground);
+  background-color: var(--fg);
+  border-color: var(--fg);
+}
+
+@media (max-width: 767px) {
+  .says-dialog__panel {
+    padding: 1.5rem;
   }
 }

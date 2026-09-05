@@ -66,3 +66,9 @@ export const photosQuery = groq`
     image{${imageFields}}
   }
 `
+
+export const recommendationsQuery = groq`
+  *[_type == "recommendation"] | order(order asc){
+    _id, name, role, company, relationship, body, receivedOn, profileUrl, order
+  }
+`

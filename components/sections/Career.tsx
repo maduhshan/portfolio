@@ -26,11 +26,12 @@ import type { Role } from '@/lib/types'
  * engages and this is the plain scrolling list it has always been.
  */
 
-/** How much scrolling advances one role. */
-const PITCH_VH = 46
+/** How much scrolling advances one role. A little longer than the work drum:
+ *  roles carry more to read on each face. */
+const PITCH_VH = 58
 
 /** How long a role holds before the wheel turns on its own. */
-const AUTO_MS = 5000
+const AUTO_MS = 7500
 
 export function Career({ roles }: { roles: Role[] }) {
   const ordered = [...roles].sort((a, b) => a.order - b.order)

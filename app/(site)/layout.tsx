@@ -3,11 +3,11 @@ import { FocusCursor } from '@/components/cursor/FocusCursor'
 import { PageResolve } from '@/components/PageResolve'
 import { SiteFooter } from '@/components/SiteFooter'
 import { SiteNav } from '@/components/nav/SiteNav'
-import { getSiteSettings } from '@/lib/content'
+import { getRecommendations, getSiteSettings } from '@/lib/content'
 import { navAvailability, socialLinks } from '@/lib/links'
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const settings = await getSiteSettings()
+  const [settings, recommendations] = await Promise.all([getSiteSettings(), getRecommendations()])
 
   return (
     <>
@@ -18,6 +18,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         name={settings.name}
         availability={navAvailability(settings.availabilityStatus)}
         socials={socialLinks(settings, ['github'])}
+        omit={recommendations.length === 0 ? ['recommendations'] : []}
       />
       <FocusCursor />
       <HashLanding />

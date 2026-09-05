@@ -4,11 +4,12 @@ import { Section } from '@/components/Section'
 import { About } from '@/components/sections/About'
 import { Career } from '@/components/sections/Career'
 import { Contact } from '@/components/sections/Contact'
+import { Recommendations } from '@/components/sections/Recommendations'
 import { Photography } from '@/components/sections/Photography'
 import { Hero } from '@/components/sections/Hero'
 import { Work } from '@/components/sections/Work'
 import { Blog } from '@/components/sections/Blog'
-import { getProjects, getRoles, getSiteSettings } from '@/lib/content'
+import { getProjects, getRecommendations, getRoles, getSiteSettings } from '@/lib/content'
 import { getFrames, heroFrame } from '@/lib/gallery'
 import { mediumProfileUrl, socialLinks } from '@/lib/links'
 import { excerpt } from '@/lib/portable-text'
@@ -35,13 +36,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const settings = await getSiteSettings()
-  const [roles, projects, gallery, entries] = await Promise.all([
+  const [roles, projects, gallery, entries, recommendations] = await Promise.all([
     getRoles(),
     getProjects(),
     // Deep enough that a pinned post from a couple of years back is in the
     // set. Only the grid's worth is rendered.
     getFrames(60),
     getBlogEntries(settings.mediumHandle),
+    getRecommendations(),
   ])
 
   const currentRole = roles.find((role) => role.endDate === null) ?? roles[0] ?? null
@@ -89,6 +91,7 @@ export default async function HomePage() {
         pinned={settings.pinnedPosts}
       />
       <Blog entries={entries} profileUrl={mediumProfileUrl(settings.mediumHandle)} />
+      <Recommendations items={recommendations} profileUrl={settings.linkedin} />
       <Contact settings={settings} />
     </>
   )

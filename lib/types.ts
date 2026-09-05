@@ -147,3 +147,18 @@ export type Frame = {
   source: 'instagram' | 'sanity'
   takenAt?: string
 }
+
+/** A recommendation received on LinkedIn, copied across by hand. */
+export type Recommendation = {
+  _id: string
+  /** Who wrote it. */
+  name: string
+  role?: string
+  company?: string
+  /** LinkedIn's own line, e.g. "Managed Madushan directly". */
+  relationship?: string
+  body: string
+  receivedOn?: string
+  profileUrl?: string
+  order: number
+}

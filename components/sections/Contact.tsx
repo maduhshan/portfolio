@@ -10,7 +10,7 @@ export function Contact({ settings }: { settings: SiteSettings }) {
   const available = settings.availabilityStatus !== 'Not currently available'
 
   return (
-    <Section id="contact" index="05" title="Contact" ground="hide">
+    <Section id="contact" index="06" title="Contact" ground="hide">
       {settings.availabilityStatus ? (
         <p className="flex items-center gap-2">
           {available ? <span aria-hidden className="rounded-dot size-[5px] bg-current" /> : null}

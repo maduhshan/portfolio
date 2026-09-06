@@ -228,24 +228,23 @@ export function SiteNav({
           {socials.length > 0 ? (
             <>
               <span aria-hidden className="bg-rule-strong h-3 w-px" />
-              {/* Named, and set in the same mono at the same ink as the name
-                  beside them. Not a faded row of afterthoughts. */}
+              {/* Marks only. They were named at the wider sizes, but the bar
+                  now carries seven sections and the names were the cheapest
+                  thing in it to give up: these three are recognisable without
+                  them, and the name stays in the accessibility tree. */}
               <ul className="flex items-center gap-4 md:gap-5">
                 {socials.map((link) => {
                   const Mark = marks[link.mark]
                   return (
                     <li key={link.href} className="flex">
                       <a
-                        className="nav-item meta text-fg flex items-center gap-0 xl:gap-2"
+                        className="nav-item meta text-fg flex items-center"
                         href={link.href}
                         target="_blank"
                         rel="me noopener noreferrer"
                       >
                         <Mark />
-                        {/* Named from 1280 up, where the bar has room. Below
-                            that the mark carries it and the name stays in the
-                            accessibility tree. */}
-                        <span className="sr-only xl:not-sr-only">{link.label}</span>
+                        <span className="sr-only">{link.label}</span>
                       </a>
                     </li>
                   )

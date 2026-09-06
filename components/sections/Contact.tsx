@@ -4,13 +4,13 @@ import { socialLinks, whatsappLink } from '@/lib/links'
 import type { SiteSettings } from '@/lib/types'
 
 /** No form. An address, the kind of work that suits, and the places I already am. */
-export function Contact({ settings }: { settings: SiteSettings }) {
+export function Contact({ index, settings }: { index: string; settings: SiteSettings }) {
   const links = socialLinks(settings)
   const whatsapp = whatsappLink(settings.whatsapp)
   const available = settings.availabilityStatus !== 'Not currently available'
 
   return (
-    <Section id="contact" index="06" title="Contact" ground="hide">
+    <Section id="contact" index={index} title="Contact" ground="hide">
       {settings.availabilityStatus ? (
         <p className="flex items-center gap-2">
           {available ? <span aria-hidden className="rounded-dot size-[5px] bg-current" /> : null}

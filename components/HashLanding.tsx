@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
+import { scrollInset } from '@/lib/scroll'
+
 /**
  * Landing on the right section when the page is opened at a hash.
  *
@@ -52,7 +54,7 @@ export function HashLanding() {
       if (done) return
       const target = document.getElementById(id)
       if (!target) return
-      const inset = parseFloat(getComputedStyle(target).scrollMarginTop) || 0
+      const inset = scrollInset(target)
       const wanted = target.getBoundingClientRect().top + window.scrollY - inset
       if (Math.abs(wanted - window.scrollY) < 2) return
       window.scrollTo({ top: wanted, behavior: 'instant' })

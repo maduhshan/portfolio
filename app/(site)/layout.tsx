@@ -2,12 +2,19 @@ import { HashLanding } from '@/components/HashLanding'
 import { FocusCursor } from '@/components/cursor/FocusCursor'
 import { PageResolve } from '@/components/PageResolve'
 import { SiteFooter } from '@/components/SiteFooter'
+import { hiddenSections } from '@/components/nav/navItems'
 import { SiteNav } from '@/components/nav/SiteNav'
-import { getRecommendations, getSiteSettings } from '@/lib/content'
+import { getLife, getRecommendations, getSiteSettings } from '@/lib/content'
 import { navAvailability, socialLinks } from '@/lib/links'
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [settings, recommendations] = await Promise.all([getSiteSettings(), getRecommendations()])
+  const [settings, recommendations, life] = await Promise.all([
+    getSiteSettings(),
+    getRecommendations(),
+    getLife(),
+  ])
+
+  const hidden = hiddenSections({ life, recommendations })
 
   return (
     <>
@@ -18,7 +25,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         name={settings.name}
         availability={navAvailability(settings.availabilityStatus)}
         socials={socialLinks(settings, ['github'])}
-        omit={recommendations.length === 0 ? ['recommendations'] : []}
+        omit={hidden}
       />
       <FocusCursor />
       <HashLanding />

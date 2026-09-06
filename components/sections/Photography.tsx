@@ -15,10 +15,12 @@ import type { Frame } from '@/lib/types'
  * lightbox, is at /photography.
  */
 export function Photography({
+  index,
   frames,
   instagram,
   pinned = [],
 }: {
+  index: string
   frames: Frame[]
   instagram?: string
   pinned?: string[]
@@ -26,7 +28,7 @@ export function Photography({
   const handle = instagramHandle(instagram)
 
   return (
-    <Section id="photography" index="03" title="Photography" href="/photography" ground="hide">
+    <Section id="photography" index={index} title="Photography" href="/photography" ground="hide">
       {frames.length > 0 && instagram && handle ? (
         <>
           <InstagramPreview

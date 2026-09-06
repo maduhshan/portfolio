@@ -1,4 +1,5 @@
 import {
+  seedLife,
   seedPhotos,
   seedPosts,
   seedProjects,
@@ -9,6 +10,7 @@ import {
 
 import { sanityFetch } from './sanity/client'
 import {
+  lifeQuery,
   photosQuery,
   postBySlugQuery,
   postsQuery,
@@ -20,6 +22,7 @@ import {
   siteSettingsQuery,
 } from './sanity/queries'
 import type {
+  Life,
   Photo,
   Post,
   Project,
@@ -91,6 +94,17 @@ export async function getPost(slug: string): Promise<Post | null> {
 export async function getPhotos(): Promise<Photo[]> {
   const docs = await sanityFetch<Photo[]>({ query: photosQuery, tags: ['photo'] })
   return docs?.length ? docs : seedPhotos
+}
+
+/**
+ * His own account of himself. A singleton, so it is either written or it is not:
+ * there is no half of it worth showing, and every caller treats null as "the
+ * section does not exist yet" rather than rendering an empty shell.
+ */
+export async function getLife(): Promise<Life | null> {
+  const doc = await sanityFetch<Life | null>({ query: lifeQuery, tags: ['life'] })
+  const written = Boolean(doc?.intro?.trim() || doc?.body?.length || doc?.photos?.length)
+  return written ? doc : seedLife
 }
 
 export async function getRecommendations(): Promise<Recommendation[]> {

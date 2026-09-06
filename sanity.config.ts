@@ -15,7 +15,8 @@ export default defineConfig({
   schema: { types: schemaTypes },
   plugins: [structureTool({ structure }), visionTool({ defaultApiVersion: apiVersion })],
   document: {
-    // Site settings is a singleton; keep it out of the "create new" menu.
-    newDocumentOptions: (prev) => prev.filter((item) => item.templateId !== 'siteSettings'),
+    // Both singletons; keep them out of the "create new" menu.
+    newDocumentOptions: (prev) =>
+      prev.filter((item) => !['siteSettings', 'life'].includes(item.templateId ?? '')),
   },
 })

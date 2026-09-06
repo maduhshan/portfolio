@@ -5,14 +5,16 @@ import { Section } from '@/components/Section'
 import type { BlogEntry } from '@/lib/types'
 
 export function Blog({
+  index,
   entries,
   profileUrl,
 }: {
+  index: string
   entries: BlogEntry[]
   profileUrl: string | null
 }) {
   return (
-    <Section id="blog" index="04" title="Blog" href="/blog">
+    <Section id="blog" index={index} title="Blog" href="/blog">
       {entries.length > 0 ? (
         <>
           <BlogList entries={entries.slice(0, 4)} />

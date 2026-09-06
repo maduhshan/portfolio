@@ -4,12 +4,14 @@ import { Section } from '@/components/Section'
 import { About } from '@/components/sections/About'
 import { Career } from '@/components/sections/Career'
 import { Contact } from '@/components/sections/Contact'
+import { hiddenSections, sectionNumber } from '@/components/nav/navItems'
+import { Life } from '@/components/sections/Life'
 import { Recommendations } from '@/components/sections/Recommendations'
 import { Photography } from '@/components/sections/Photography'
 import { Hero } from '@/components/sections/Hero'
 import { Work } from '@/components/sections/Work'
 import { Blog } from '@/components/sections/Blog'
-import { getProjects, getRecommendations, getRoles, getSiteSettings } from '@/lib/content'
+import { getLife, getProjects, getRecommendations, getRoles, getSiteSettings } from '@/lib/content'
 import { getFrames, heroFrame } from '@/lib/gallery'
 import { mediumProfileUrl, socialLinks } from '@/lib/links'
 import { excerpt } from '@/lib/portable-text'
@@ -36,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const settings = await getSiteSettings()
-  const [roles, projects, gallery, entries, recommendations] = await Promise.all([
+  const [roles, projects, gallery, entries, recommendations, life] = await Promise.all([
     getRoles(),
     getProjects(),
     // Deep enough that a pinned post from a couple of years back is in the
@@ -44,9 +46,14 @@ export default async function HomePage() {
     getFrames(60),
     getBlogEntries(settings.mediumHandle),
     getRecommendations(),
+    getLife(),
   ])
 
   const currentRole = roles.find((role) => role.endDate === null) ?? roles[0] ?? null
+
+  // Headings and the menu count the same sections, so a hidden one renumbers
+  // both rather than leaving a gap in one of them.
+  const n = sectionNumber(hiddenSections({ life, recommendations }))
 
   const person = {
     '@context': 'https://schema.org',
@@ -79,20 +86,30 @@ export default async function HomePage() {
       />
       <Hero settings={settings} frame={heroFrame(settings, gallery.frames[0] ?? null)} />
       <About settings={settings} />
-      <Section id="career" index="01" title="Career">
+      <Life index={n('life')} life={life} />
+      <Section id="career" index={n('career')} title="Career">
         <Career roles={roles} />
       </Section>
-      <Section id="work" index="02" title="Selected work" href="/work">
+      <Section id="work" index={n('work')} title="Selected work" href="/work">
         <Work projects={projects} />
       </Section>
       <Photography
+        index={n('photography')}
         frames={gallery.frames}
         instagram={settings.instagram}
         pinned={settings.pinnedPosts}
       />
-      <Blog entries={entries} profileUrl={mediumProfileUrl(settings.mediumHandle)} />
-      <Recommendations items={recommendations} profileUrl={settings.linkedin} />
-      <Contact settings={settings} />
+      <Blog
+        index={n('blog')}
+        entries={entries}
+        profileUrl={mediumProfileUrl(settings.mediumHandle)}
+      />
+      <Recommendations
+        index={n('recommendations')}
+        items={recommendations}
+        profileUrl={settings.linkedin}
+      />
+      <Contact index={n('contact')} settings={settings} />
     </>
   )
 }

@@ -31,9 +31,11 @@ import type { Recommendation } from '@/lib/types'
 const CLAMP_LINES = 7
 
 export function Recommendations({
+  index,
   items,
   profileUrl,
 }: {
+  index: string
   items: Recommendation[]
   /** The LinkedIn profile these were left on. */
   profileUrl?: string | null
@@ -125,7 +127,7 @@ export function Recommendations({
     ))
 
   return (
-    <Section id="recommendations" index="05" title="What people say">
+    <Section id="recommendations" index={index} title="What people say">
       <div
         className="says"
         onKeyDown={(event) => {

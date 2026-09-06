@@ -66,9 +66,7 @@ export type Stat = { value: string; label: string }
 export type Competency = { area: string; items: string[] }
 
 export type AvailabilityStatus =
-  | 'Available for consulting'
-  | 'Open to selected work'
-  | 'Not currently available'
+  'Available for consulting' | 'Open to selected work' | 'Not currently available'
 
 /** A post written here, in Sanity. */
 export type BlogCategory = 'Technology' | 'Misc'
@@ -149,6 +147,20 @@ export type Frame = {
 }
 
 /** A recommendation received on LinkedIn, copied across by hand. */
+export type LifePhoto = {
+  image: SanityImage
+  /** Doubles as alt text. */
+  caption: string
+}
+
+export type Life = {
+  /** The passage shown on the home page. */
+  intro?: string
+  /** The rest, shown only on /life. */
+  body?: PortableTextBlock[]
+  photos?: LifePhoto[]
+}
+
 export type Recommendation = {
   _id: string
   /** Who wrote it. */

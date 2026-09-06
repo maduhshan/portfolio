@@ -644,6 +644,15 @@
   filter: grayscale(1) contrast(1.06) brightness(1.02);
 }
 
+/* Life, on the home page, for the same reason: a photograph of a person is
+   part of the interface, and colour stays with the animals. The identical
+   photographs run in colour on /life, which is his own page rather than a
+   section of this one. Done here rather than baked into the files, so one
+   upload serves both. */
+.life-plates img {
+  filter: grayscale(1) contrast(1.06) brightness(1.02);
+}
+
 /* A little grain, for a print rather than a screenshot. */
 .portrait::after {
   content: '';

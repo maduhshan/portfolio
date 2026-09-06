@@ -239,9 +239,9 @@ export function Career({ roles }: { roles: Role[] }) {
           <DrumSkip
             direction={direction}
             down="#work"
-            up="#about"
+            up="#life"
             downLabel="Skip the career history and go to Selected work"
-            upLabel="Skip the career history and go back up"
+            upLabel="Skip the career history and go back to Life"
           />
         </div>
       </div>

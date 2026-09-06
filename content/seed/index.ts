@@ -1,3 +1,4 @@
+export { seedLife } from './life'
 export { seedPhotos } from './photos'
 export { seedPosts } from './posts'
 export { seedRecommendations } from './recommendations'

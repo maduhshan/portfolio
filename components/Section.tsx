@@ -25,9 +25,16 @@ export function Section({
       data-ground={ground}
       className={`${
         ground === 'hide' ? 'bg-ground' : 'ground-open'
-      } text-fg border-rule scroll-mt-24 border-t py-20 md:py-28 ${className}`}
+      } text-fg border-rule border-t py-20 md:py-28 ${className}`}
     >
-      <div className="shell grid gap-x-8 gap-y-10 md:grid-cols-12">
+      {/* grid-cols-1, not the implicit track. An implicit column is sized auto,
+          which tops out at max-content, so any child wider than the screen drags
+          the whole column out with it: the recommendations carousel lays its
+          cards out side by side and is only clipped for painting, so its
+          max-content is every card at once. minmax(0, 1fr) caps the column at
+          the container instead, and the clipping then does what it looks like
+          it does. */}
+      <div className="shell grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-12">
         <header className="md:sticky md:top-28 md:col-span-3 md:self-start">
           <p className="label">{index}</p>
           <h2 className="heading-1 mt-2">

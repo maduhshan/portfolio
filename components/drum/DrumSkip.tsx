@@ -1,5 +1,7 @@
 'use client'
 
+import { scrollInset } from '@/lib/scroll'
+
 /**
  * The way past a drum.
  *
@@ -39,7 +41,7 @@ export function DrumSkip({
     if (!(target instanceof HTMLElement)) return
     event.preventDefault()
     // Mirror what the anchor would have done, minus the animation.
-    const inset = parseFloat(getComputedStyle(target).scrollMarginTop) || 0
+    const inset = scrollInset(target)
     window.scrollTo({
       top: target.getBoundingClientRect().top + window.scrollY - inset,
       behavior: 'instant',

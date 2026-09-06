@@ -1,6 +1,7 @@
 import type { SchemaTypeDefinition } from 'sanity'
 
 import { blockContent } from './blockContent'
+import { life } from './life'
 import { photo } from './photo'
 import { post } from './post'
 import { project } from './project'
@@ -9,6 +10,7 @@ import { role } from './role'
 import { siteSettings } from './siteSettings'
 
 export const schemaTypes: SchemaTypeDefinition[] = [
+  life,
   role,
   project,
   post,

@@ -366,7 +366,7 @@ export function useDrum(count: number, { falloff = FALLOFF, autoMs = 0 }: Option
         const within = raw - seat
         turned = seat + smoothstep(clamp01((within - DWELL) / (1 - DWELL * 2)))
       }
-      drum!.style.setProperty('--turn', `${-turned * step}deg`)
+      drum!.style.setProperty('--turn', `${turned * step}deg`)
 
       for (let i = 0; i < items.length; i++) {
         const offset = Math.abs(i - turned)

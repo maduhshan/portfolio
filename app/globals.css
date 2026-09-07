@@ -871,6 +871,8 @@
 
 [data-drum='on'] {
   position: relative;
+
+  overflow: clip;
   /* svh, not dvh: the dynamic unit changes as the mobile URL bar slides in
      and out during a scroll, which would resize the runway mid-gesture and
      make the whole wheel jump. The small unit is stable. */
@@ -937,10 +939,15 @@
   border-top: 0;
 }
 
+/* Negative, so the wheel turns the way the page does. With a positive angle the
+   next item sits above the current one and drops downward into place as you
+   scroll down, which is backwards: it reads as a wheel already part-turned, and
+   the first item never looks like the first because something always hangs
+   above it. Turned this way the next item waits below and rises into place. */
 [data-drum='on'] .drum-face {
   position: absolute;
   inset: 0;
-  transform: rotateX(calc(var(--i) * (360deg / var(--faces)))) translateZ(var(--radius, 0px));
+  transform: rotateX(calc(var(--i) * (-360deg / var(--faces)))) translateZ(var(--radius, 0px));
   backface-visibility: hidden;
   border-bottom: 0;
 }
